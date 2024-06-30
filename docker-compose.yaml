@@ -1,0 +1,74 @@
+services:
+  postgres:
+    image: postgres:15.3-alpine
+    restart: always
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: /usr/bin/pg_isready || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    env_file:
+      - .env
+  postgres-dev:
+    image: postgres:15.3-alpine
+    restart: always
+    healthcheck:
+      test: /usr/bin/pg_isready || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    env_file:
+      - .env
+  api:
+    build:
+      context: .
+      dockerfile: ./Dockerfile.dev
+    volumes:
+      - ./:/app
+    ports:
+      - "8089:8080"
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+    restart: always
+    entrypoint: sh -c `wgo make atlas-migrate '::' wgo make atlas-status '::' wgo run cmd/main.go api`
+  migrate:
+    build:
+      context: .
+      dockerfile: ./Dockerfile.dev
+    volumes:
+      - ./:/app
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+    restart: always
+    entrypoint: sh -c `make atlas-migrate`
+  seeder:
+    build:
+      context: .
+      dockerfile: ./Dockerfile.dev
+    volumes:
+      - ./:/app
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+    restart: always
+    entrypoint: sh -c `go run cmd/main.go seeder`
+  tools:
+    build:
+      context: .
+      dockerfile: ./Dockerfile.dev
+    volumes:
+      - ./:/app
+    env_file:
+      - .env
+    command: tail -f /dev/null
+volumes:
+  pgdata:

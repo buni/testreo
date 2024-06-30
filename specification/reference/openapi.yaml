@@ -1,0 +1,123 @@
+openapi: 3.1.0
+x-stoplight:
+  id: 6wmj08v81aphx
+info:
+  title: Wallet Service
+  version: '1.0'
+servers:
+  - url: 'http://localhost:3000'
+paths:
+  /v1/wallets:
+    get:
+      summary: Your GET endpoint
+      tags: []
+      responses: {}
+      operationId: get-v1-wallets
+    post:
+      summary: ''
+      operationId: post-v1-wallets
+      responses:
+        '200':
+          description: OK
+  '/v1/wallets/{walletID}':
+    parameters:
+      - schema:
+          type: string
+        name: walletID
+        in: path
+        required: true
+    get:
+      summary: Your GET endpoint
+      tags: []
+      responses: {}
+      operationId: get-v1-wallets-walletID
+  '/v1/wallets/{walletID}/transactions':
+    parameters:
+      - schema:
+          type: string
+        name: walletID
+        in: path
+        required: true
+    get:
+      summary: Your GET endpoint
+      tags: []
+      responses: {}
+      operationId: get-v1-wallets-walletID-transfers
+    post:
+      summary: ''
+      operationId: post-v1-wallets-walletID-transactions
+      responses:
+        '200':
+          description: OK
+  '/v1/wallets/{walletID}/transactions/debit':
+    parameters:
+      - schema:
+          type: string
+        name: walletID
+        in: path
+        required: true
+    get:
+      summary: Your GET endpoint
+      tags: []
+      responses: {}
+      operationId: get-v1-wallets-walletID-transactions-debit
+  '/v1/wallets/{walletID}/transactions/credit':
+    parameters:
+      - schema:
+          type: string
+        name: walletID
+        in: path
+        required: true
+    get:
+      summary: Your GET endpoint
+      tags: []
+      responses: {}
+      operationId: get-v1-wallets-walletID-transactions-credit
+  '/v1/wallets/{walletID}/transactions/{transactionID}/complete':
+    parameters:
+      - schema:
+          type: string
+        name: walletID
+        in: path
+        required: true
+      - schema:
+          type: string
+        name: transactionID
+        in: path
+        required: true
+    get:
+      summary: Your GET endpoint
+      tags: []
+      responses: {}
+      operationId: get-v1-wallets-walletID-transactions-transactionID-complete
+    post:
+      summary: ''
+      operationId: post-v1-wallets-walletID-transactions-transactionID-complete
+      responses:
+        '200':
+          description: OK
+  '/v1/wallets/{walletID}/transactions/{transactionID}/revert':
+    parameters:
+      - schema:
+          type: string
+        name: walletID
+        in: path
+        required: true
+      - schema:
+          type: string
+        name: transactionID
+        in: path
+        required: true
+    get:
+      summary: Your GET endpoint
+      tags: []
+      responses: {}
+      operationId: get-openapi.yamlv1-wallets-walletID-transactions-transactionID-revert
+    post:
+      summary: ''
+      operationId: post-v1-wallets-walletID-transactions-transactionID-revert
+      responses:
+        '200':
+          description: OK
+components:
+  schemas: {}
