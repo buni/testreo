@@ -1,8 +1,10 @@
 package entity
 
 import (
+	"fmt"
 	"time"
 
+	"github.com/gofrs/uuid"
 	"github.com/shopspring/decimal"
 )
 
@@ -46,17 +48,48 @@ type WalletEvent struct {
 type Wallet struct {
 	ID          string    `db:"id"`
 	ReferenceID string    `db:"reference_id"`
-	Name        string    `db:"name"`
-	Currency    string    `db:"currency"`
 	CreatedAt   time.Time `db:"created_at"`
 	UpdatedAt   time.Time `db:"updated_at"`
 }
 
+func NewWallet(referenceID string) (Wallet, error) {
+	id, err := uuid.NewV7()
+	if err != nil {
+		return Wallet{}, fmt.Errorf("failed to generate wallet id: %w", err)
+	}
+
+	tt := time.Now().UTC().Truncate(time.Microsecond)
+
+	return Wallet{
+		ID:          id.String(),
+		ReferenceID: referenceID,
+		CreatedAt:   tt,
+		UpdatedAt:   tt,
+	}, nil
+}
+
 type WalletProjection struct {
 	WalletID      string          `db:"wallet_id"`
-	Balance       decimal.Decimal `db:"balance" updatable:"true"`
-	PendingDebit  decimal.Decimal `db:"pending_debit" updatable:"true"`
-	PendingCredit decimal.Decimal `db:"pending_credit" updatable:"true"`
-	LastEventID   string          `db:"last_event_id" updatable:"true"`
-	LastSequence  int64           `db:"last_sequence" updatable:"true"`
+	Balance       decimal.Decimal `db:"balance"`
+	PendingDebit  decimal.Decimal `db:"pending_debit"`
+	PendingCredit decimal.Decimal `db:"pending_credit"`
+	LastEventID   string          `db:"last_event_id"`
+	LastSequence  int64           `db:"last_sequence"`
+	CreatedAt     time.Time       `db:"created_at"`
+	UpdatedAt     time.Time       `db:"updated_at"`
+}
+
+func NewWalletProjection(walletID, lastEventID string, balance, pendingDebit, pendingCredit decimal.Decimal, lastSequence int64) WalletProjection {
+	tt := time.Now().UTC().Truncate(time.Microsecond)
+
+	return WalletProjection{
+		WalletID:      walletID,
+		Balance:       balance,
+		PendingDebit:  pendingDebit,
+		PendingCredit: pendingCredit,
+		LastEventID:   lastEventID,
+		LastSequence:  0,
+		CreatedAt:     tt,
+		UpdatedAt:     tt,
+	}
 }
