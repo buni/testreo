@@ -17,6 +17,7 @@ type Service struct {
 	repo           contract.WalletRepository
 	projectionRepo contract.WalletProjectionRepository
 	eventRepo      contract.WalletEventRepository
+	publisher      contract.WalletEventPublisher
 	txm            database.TransactionManager
 }
 
@@ -24,12 +25,14 @@ func NewService(
 	repo contract.WalletRepository,
 	projectionRepo contract.WalletProjectionRepository,
 	eventRepo contract.WalletEventRepository,
+	publisher contract.WalletEventPublisher,
 	txm database.TransactionManager,
 ) *Service {
 	return &Service{
 		repo:           repo,
 		projectionRepo: projectionRepo,
 		eventRepo:      eventRepo,
+		publisher:      publisher,
 		txm:            txm,
 	}
 }
@@ -116,7 +119,10 @@ func (s *Service) DebitTransfer(ctx context.Context, req *request.DebitTransfer)
 			return fmt.Errorf("failed to create wallet event: %w", err)
 		}
 
-		// TODO: send event and update projection
+		err = s.publisher.PublishCreated(ctx, result)
+		if err != nil {
+			return fmt.Errorf("failed to publish wallet event: %w", err)
+		}
 
 		return nil
 	})
@@ -171,7 +177,10 @@ func (s *Service) CreditTransfer(ctx context.Context, req *request.CreditTransfe
 			return fmt.Errorf("failed to create wallet event: %w", err)
 		}
 
-		// TODO: send event and update projection
+		err = s.publisher.PublishCreated(ctx, result)
+		if err != nil {
+			return fmt.Errorf("failed to publish wallet event: %w", err)
+		}
 
 		return nil
 	})
@@ -200,6 +209,11 @@ func (s *Service) CompleteTransfer(ctx context.Context, req *request.CompleteTra
 			return fmt.Errorf("failed to create wallet event: %w", err)
 		}
 
+		err = s.publisher.PublishCreated(ctx, result)
+		if err != nil {
+			return fmt.Errorf("failed to publish wallet event: %w", err)
+		}
+
 		return nil
 	})
 	if err != nil {
@@ -225,6 +239,11 @@ func (s *Service) RevertTransfer(ctx context.Context, req *request.RevertTransfe
 		result, err = s.eventRepo.Create(ctx, event)
 		if err != nil {
 			return fmt.Errorf("failed to create wallet event: %w", err)
+		}
+
+		err = s.publisher.PublishCreated(ctx, result)
+		if err != nil {
+			return fmt.Errorf("failed to publish wallet event: %w", err)
 		}
 
 		return nil

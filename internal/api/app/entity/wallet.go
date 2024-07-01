@@ -27,21 +27,26 @@ const (
 	TransferStatusFailed
 )
 
+const (
+	WalletEventsTopic   = "wallet.events"
+	WalletEventsCreated = "created"
+)
+
 //go:generate enumer -type=WalletEventType,TransferStatus -transform=snake -output=wallet_enum.go -json -sql -text
 type WalletEventType uint
 
 type TransferStatus uint
 
 type WalletEvent struct {
-	ID             string          `db:"id"`
-	Version        int             `db:"version"`
-	TransferID     string          `db:"transfer_id"`
-	ReferenceID    string          `db:"reference_id"`
-	WalletID       string          `db:"wallet_id"`
-	Amount         decimal.Decimal `db:"amount"`
-	EventType      WalletEventType `db:"mutation_type"`
-	TransferStatus TransferStatus  `db:"transfer_status"`
-	CreatedAt      time.Time       `db:"created_at"`
+	ID             string          `db:"id" json:"id"`
+	Version        int             `db:"version" json:"version"`
+	TransferID     string          `db:"transfer_id" json:"transfer_id"`
+	ReferenceID    string          `db:"reference_id" json:"reference_id"`
+	WalletID       string          `db:"wallet_id" json:"wallet_id"`
+	Amount         decimal.Decimal `db:"amount" json:"amount"`
+	EventType      WalletEventType `db:"event_type" json:"event_type"`
+	TransferStatus TransferStatus  `db:"transfer_status" json:"transfer_status"`
+	CreatedAt      time.Time       `db:"created_at" json:"created_at"`
 }
 
 func NewWalletEvent(

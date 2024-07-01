@@ -31,3 +31,7 @@ type WalletService interface {
 	CompleteTransfer(ctx context.Context, req *request.CompleteTransfer) (entity.WalletEvent, error)
 	RevertTransfer(ctx context.Context, req *request.RevertTransfer) (entity.WalletEvent, error)
 }
+
+type WalletEventPublisher interface {
+	PublishCreated(ctx context.Context, event entity.WalletEvent) error
+}
