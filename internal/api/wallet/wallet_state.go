@@ -4,7 +4,7 @@ import (
 	"github.com/buni/wallet/internal/api/app/entity"
 )
 
-func ProcessEvents2(projection *entity.WalletProjection, events []entity.WalletEvent) error {
+func ProcessEvents(projection *entity.WalletProjection, events []entity.WalletEvent) error {
 	if len(events) == 0 {
 		return nil
 	}
@@ -95,7 +95,6 @@ func ProcessEvents2(projection *entity.WalletProjection, events []entity.WalletE
 
 	lastIdx := len(events) - 1
 	projection.WalletID = events[lastIdx].WalletID
-	projection.LastSequence = events[lastIdx].Sequence
 	projection.LastEventID = events[lastIdx].ID
 
 	return nil

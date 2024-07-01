@@ -11,6 +11,8 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+var _ contract.WalletService = (*Service)(nil)
+
 type Service struct {
 	repo           contract.WalletRepository
 	projectionRepo contract.WalletProjectionRepository
@@ -32,19 +34,19 @@ func NewService(
 	}
 }
 
-func (s *Service) CreateWallet(ctx context.Context, req request.CreateWallet) (wallet entity.Wallet, err error) {
-	wallet, err = entity.NewWallet(req.ReferenceID)
+func (s *Service) Create(ctx context.Context, req *request.CreateWallet) (result entity.Wallet, err error) {
+	result, err = entity.NewWallet(req.ReferenceID)
 	if err != nil {
 		return entity.Wallet{}, fmt.Errorf("failed to create wallet entity: %w", err)
 	}
 
 	err = s.txm.Run(ctx, func(ctx context.Context) error {
-		wallet, err = s.repo.Create(ctx, wallet)
+		result, err = s.repo.Create(ctx, result)
 		if err != nil {
 			return fmt.Errorf("failed to create wallet: %w", err)
 		}
 
-		projection := entity.NewWalletProjection(wallet.ID, "", decimal.NewFromInt(0), decimal.NewFromInt(0), decimal.NewFromInt(0), 0)
+		projection := entity.NewWalletProjection(result.ID, "", decimal.NewFromInt(0), decimal.NewFromInt(0), decimal.NewFromInt(0))
 
 		_, err = s.projectionRepo.Create(ctx, projection)
 		if err != nil {
@@ -57,5 +59,179 @@ func (s *Service) CreateWallet(ctx context.Context, req request.CreateWallet) (w
 		return
 	}
 
-	return wallet, nil
+	return result, nil
+}
+
+func (s *Service) Get(ctx context.Context, req *request.GetWallet) (result entity.WalletBalanceProjection, err error) {
+	err = s.txm.Run(ctx, func(ctx context.Context) error {
+		wallet, err := s.repo.Get(ctx, req.WalletID)
+		if err != nil {
+			return fmt.Errorf("failed to get wallet: %w", err)
+		}
+
+		projection, err := s.projectionRepo.Get(ctx, req.WalletID) // we can get both in a single query, but it makes sense to treat the wallet and projection as being stored in a separate database
+		if err != nil {
+			return fmt.Errorf("failed to get wallet projection: %w", err)
+		}
+
+		result = entity.WalletBalanceProjection{
+			Wallet:           wallet,
+			WalletProjection: projection,
+		}
+
+		return nil
+	})
+	if err != nil {
+		return
+	}
+
+	return result, nil
+}
+
+func (s *Service) DebitTransfer(ctx context.Context, req *request.DebitTransfer) (result entity.WalletEvent, err error) {
+	if req.Amount.IsNegative() {
+		return entity.WalletEvent{}, entity.ErrNegativeBalance
+	}
+
+	event, err := entity.NewWalletEvent(
+		req.TransferID,
+		req.ReferenceID,
+		req.WalletID,
+		req.Amount,
+		entity.EventTypeDebitTransfer,
+		req.Status,
+	)
+	if err != nil {
+		return result, fmt.Errorf("failed to create wallet event: %w", err)
+	}
+
+	err = s.txm.Run(ctx, func(ctx context.Context) error {
+		_, err := s.repo.Get(ctx, req.WalletID) // make sure the wallet exists
+		if err != nil {
+			return fmt.Errorf("failed to get wallet: %w", err)
+		}
+
+		result, err = s.eventRepo.Create(ctx, event) // when doing a debit transfer we don't need to rebuild the state as we are only adding to the balance
+		if err != nil {
+			return fmt.Errorf("failed to create wallet event: %w", err)
+		}
+
+		// TODO: send event and update projection
+
+		return nil
+	})
+	if err != nil {
+		return
+	}
+
+	return result, nil
+}
+
+func (s *Service) CreditTransfer(ctx context.Context, req *request.CreditTransfer) (result entity.WalletEvent, err error) {
+	if req.Amount.IsNegative() {
+		return entity.WalletEvent{}, entity.ErrNegativeBalance
+	}
+
+	event, err := entity.NewWalletEvent(
+		req.TransferID,
+		req.ReferenceID,
+		req.WalletID,
+		req.Amount,
+		entity.EventTypeCreditTransfer,
+		req.Status,
+	)
+	if err != nil {
+		return result, fmt.Errorf("failed to create wallet event: %w", err)
+	}
+
+	err = s.txm.Run(ctx, func(ctx context.Context) error {
+		_, err = s.repo.Get(ctx, req.WalletID) // make sure the wallet exists
+		if err != nil {
+			return fmt.Errorf("failed to get wallet: %w", err)
+		}
+
+		events, err := s.eventRepo.ListByWalletID(ctx, req.WalletID) // get all events for the wallet and rebuild the state
+		if err != nil {
+			return fmt.Errorf("failed to list wallet events: %w", err)
+		}
+
+		projection := &entity.WalletProjection{}
+
+		err = ProcessEvents(projection, events)
+		if err != nil {
+			return fmt.Errorf("failed to process wallet events: %w", err)
+		}
+
+		if projection.Balance.LessThan(req.Amount) {
+			return entity.ErrInsufficientBalance
+		}
+
+		result, err = s.eventRepo.Create(ctx, event) // when doing a debit transfer we don't need to rebuild the state as we are only adding to the balance
+		if err != nil {
+			return fmt.Errorf("failed to create wallet event: %w", err)
+		}
+
+		// TODO: send event and update projection
+
+		return nil
+	})
+	if err != nil {
+		return
+	}
+
+	return result, nil
+}
+
+func (s *Service) CompleteTransfer(ctx context.Context, req *request.CompleteTransfer) (result entity.WalletEvent, err error) {
+	event, err := entity.NewWalletEvent(req.TransferID, req.ReferenceID, req.WalletID, decimal.NewFromInt(0), entity.EventTypeUpdateTransferStatus, entity.TransferStatusCompleted)
+	if err != nil {
+		return result, fmt.Errorf("failed to create wallet event: %w", err)
+	}
+
+	err = s.txm.Run(ctx, func(ctx context.Context) error {
+		_, err = s.repo.Get(ctx, req.WalletID) // make sure the wallet exists
+		if err != nil {
+			return fmt.Errorf("failed to get wallet: %w", err)
+		}
+
+		// since we don't really care if the transfer_id exists, we can just create the event and worst case it will just get ignored during state rebuild
+		result, err = s.eventRepo.Create(ctx, event)
+		if err != nil {
+			return fmt.Errorf("failed to create wallet event: %w", err)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return
+	}
+
+	return result, nil
+}
+
+func (s *Service) RevertTransfer(ctx context.Context, req *request.RevertTransfer) (result entity.WalletEvent, err error) {
+	event, err := entity.NewWalletEvent(req.TransferID, req.ReferenceID, req.WalletID, decimal.NewFromInt(0), entity.EventTypeUpdateTransferStatus, entity.TransferStatusFailed)
+	if err != nil {
+		return result, fmt.Errorf("failed to create wallet event: %w", err)
+	}
+
+	err = s.txm.Run(ctx, func(ctx context.Context) error {
+		_, err = s.repo.Get(ctx, req.WalletID) // make sure the wallet exists
+		if err != nil {
+			return fmt.Errorf("failed to get wallet: %w", err)
+		}
+
+		// since we don't really care if the transfer_id exists, we can just create the event and worst case it will just get ignored during state rebuild
+		result, err = s.eventRepo.Create(ctx, event)
+		if err != nil {
+			return fmt.Errorf("failed to create wallet event: %w", err)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return
+	}
+
+	return result, nil
 }

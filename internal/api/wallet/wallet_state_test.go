@@ -67,7 +67,6 @@ func TestProcessEvents(t *testing.T) {
 					TransferID:     "debit1",
 					Amount:         decimal.NewFromInt(100),
 					TransferStatus: entity.TransferStatusCompleted,
-					Sequence:       1,
 				},
 				{
 					ID:             "debit2",
@@ -76,14 +75,12 @@ func TestProcessEvents(t *testing.T) {
 					TransferID:     "debit2",
 					Amount:         decimal.NewFromInt(50),
 					TransferStatus: entity.TransferStatusCompleted,
-					Sequence:       2,
 				},
 			},
 			expected: entity.WalletProjection{
-				WalletID:     "wallet1",
-				Balance:      decimal.NewFromInt(150),
-				LastEventID:  "debit2",
-				LastSequence: 2,
+				WalletID:    "wallet1",
+				Balance:     decimal.NewFromInt(150),
+				LastEventID: "debit2",
 			},
 			expectedErr: nil,
 		},
@@ -95,21 +92,18 @@ func TestProcessEvents(t *testing.T) {
 					WalletID:       "wallet1",
 					Amount:         decimal.NewFromInt(100),
 					TransferStatus: entity.TransferStatusCompleted,
-					Sequence:       1,
 				},
 				{
 					WalletID:       "wallet1",
 					EventType:      entity.EventTypeCreditTransfer,
 					Amount:         decimal.NewFromInt(50),
 					TransferStatus: entity.TransferStatusCompleted,
-					Sequence:       2,
 				},
 			},
 			expected: entity.WalletProjection{
-				WalletID:     "wallet1",
-				Balance:      decimal.NewFromInt(50),
-				LastEventID:  "",
-				LastSequence: 2,
+				WalletID:    "wallet1",
+				Balance:     decimal.NewFromInt(50),
+				LastEventID: "",
 			},
 			expectedErr: nil,
 		},
@@ -121,21 +115,18 @@ func TestProcessEvents(t *testing.T) {
 					WalletID:       "wallet1",
 					Amount:         decimal.NewFromInt(100),
 					TransferStatus: entity.TransferStatusCompleted,
-					Sequence:       1,
 				},
 				{
 					WalletID:       "wallet1",
 					EventType:      entity.EventTypeDebitTransfer,
 					Amount:         decimal.NewFromInt(50),
 					TransferStatus: entity.TransferStatusPending,
-					Sequence:       2,
 				},
 			},
 			expected: entity.WalletProjection{
 				WalletID:     "wallet1",
 				Balance:      decimal.NewFromInt(100),
 				PendingDebit: decimal.NewFromInt(50),
-				LastSequence: 2,
 			},
 			expectedErr: nil,
 		},
@@ -147,11 +138,9 @@ func TestProcessEvents(t *testing.T) {
 					WalletID:       "wallet1",
 					TransferStatus: entity.TransferStatusCompleted,
 					Amount:         decimal.NewFromInt(100),
-					Sequence:       1,
 				},
 				{
 					WalletID:       "wallet1",
-					Sequence:       2,
 					TransferID:     "debit1",
 					Amount:         decimal.NewFromInt(50),
 					EventType:      entity.EventTypeDebitTransfer,
@@ -159,7 +148,6 @@ func TestProcessEvents(t *testing.T) {
 				},
 				{
 					WalletID:       "wallet1",
-					Sequence:       3,
 					TransferID:     "credit1",
 					Amount:         decimal.NewFromInt(20),
 					EventType:      entity.EventTypeCreditTransfer,
@@ -169,12 +157,10 @@ func TestProcessEvents(t *testing.T) {
 					WalletID:       "wallet1",
 					EventType:      entity.EventTypeUpdateTransferStatus,
 					TransferID:     "credit1",
-					Sequence:       4,
 					TransferStatus: entity.TransferStatusFailed,
 				},
 				{
 					WalletID:       "wallet1",
-					Sequence:       5,
 					TransferID:     "debit1",
 					EventType:      entity.EventTypeUpdateTransferStatus,
 					TransferStatus: entity.TransferStatusCompleted,
@@ -185,7 +171,6 @@ func TestProcessEvents(t *testing.T) {
 				Balance:       decimal.NewFromInt(150),
 				PendingDebit:  decimal.NewFromInt(1).Sub(decimal.NewFromInt(1)),
 				PendingCredit: decimal.NewFromInt(1).Sub(decimal.NewFromInt(1)),
-				LastSequence:  5,
 			},
 			expectedErr: nil,
 		},
@@ -197,34 +182,28 @@ func TestProcessEvents(t *testing.T) {
 					WalletID:       "wallet1",
 					Amount:         decimal.NewFromInt(100),
 					TransferStatus: entity.TransferStatusCompleted,
-					Sequence:       1,
 				},
 				{
 					EventType:      entity.EventTypeDebitTransfer,
 					Amount:         decimal.NewFromInt(50),
 					TransferStatus: entity.TransferStatusPending,
-					Sequence:       2,
 				},
 				{
 					EventType:      entity.EventTypeCreditTransfer,
 					Amount:         decimal.NewFromInt(30),
 					TransferStatus: entity.TransferStatusPending,
-					Sequence:       3,
 				},
 				{
 					EventType:      entity.EventTypeDebitTransfer,
 					Amount:         decimal.NewFromInt(20),
 					TransferStatus: entity.TransferStatusCompleted,
-					Sequence:       4,
 				},
 				{
 					WalletID:       "wallet1",
 					EventType:      entity.EventTypeCreditTransfer,
 					Amount:         decimal.NewFromInt(10),
 					TransferStatus: entity.TransferStatusCompleted,
-
-					Sequence:  5,
-					CreatedAt: tt,
+					CreatedAt:      tt,
 				},
 			},
 			expected: entity.WalletProjection{
@@ -232,7 +211,6 @@ func TestProcessEvents(t *testing.T) {
 				Balance:       decimal.NewFromInt(80),
 				PendingDebit:  decimal.NewFromInt(50),
 				PendingCredit: decimal.NewFromInt(30),
-				LastSequence:  5,
 			},
 			expectedErr: nil,
 		},
@@ -241,7 +219,7 @@ func TestProcessEvents(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			projection := &entity.WalletProjection{}
-			err := wallet.ProcessEvents2(projection, tt.events)
+			err := wallet.ProcessEvents(projection, tt.events)
 			log.Println(projection, err)
 			if tt.expectedErr != nil {
 				assert.Empty(t, projection)

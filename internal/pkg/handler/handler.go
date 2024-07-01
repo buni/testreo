@@ -54,3 +54,7 @@ func WrapDefault[Request, Response any](handler HandlerFunc[Request, Response]) 
 		RequestDecoderMiddleware[Request, Response](),      // runs second and executes first
 		ResponseHandlerMiddleware[Request, Response]())     // runs first and executes last (the response handling part)
 }
+
+func WrapDefaultBasic[Request, Response any](handler BasicHandlerFunc[Request, Response]) http.HandlerFunc {
+	return WrapDefault(ConvertBasicHandler(handler))
+}

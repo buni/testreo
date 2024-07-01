@@ -34,7 +34,6 @@ type TransferStatus uint
 
 type WalletEvent struct {
 	ID             string          `db:"id"`
-	Sequence       int64           `db:"sequence"`
 	Version        int             `db:"version"`
 	TransferID     string          `db:"transfer_id"`
 	ReferenceID    string          `db:"reference_id"`
@@ -43,6 +42,30 @@ type WalletEvent struct {
 	EventType      WalletEventType `db:"mutation_type"`
 	TransferStatus TransferStatus  `db:"transfer_status"`
 	CreatedAt      time.Time       `db:"created_at"`
+}
+
+func NewWalletEvent(
+	transferID, referenceID, walletID string,
+	amount decimal.Decimal,
+	eventType WalletEventType,
+	transferStatus TransferStatus,
+) (WalletEvent, error) {
+	id, err := uuid.NewV7()
+	if err != nil {
+		return WalletEvent{}, fmt.Errorf("failed to generate wallet event id: %w", err)
+	}
+
+	return WalletEvent{
+		ID:             id.String(),
+		Version:        WalletEventVersionOne,
+		TransferID:     transferID,
+		ReferenceID:    referenceID,
+		WalletID:       walletID,
+		Amount:         amount,
+		EventType:      eventType,
+		TransferStatus: transferStatus,
+		CreatedAt:      time.Now().UTC().Truncate(time.Microsecond),
+	}, nil
 }
 
 type Wallet struct {
@@ -74,12 +97,16 @@ type WalletProjection struct {
 	PendingDebit  decimal.Decimal `db:"pending_debit"`
 	PendingCredit decimal.Decimal `db:"pending_credit"`
 	LastEventID   string          `db:"last_event_id"`
-	LastSequence  int64           `db:"last_sequence"`
 	CreatedAt     time.Time       `db:"created_at"`
 	UpdatedAt     time.Time       `db:"updated_at"`
 }
 
-func NewWalletProjection(walletID, lastEventID string, balance, pendingDebit, pendingCredit decimal.Decimal, lastSequence int64) WalletProjection {
+type WalletBalanceProjection struct {
+	Wallet           Wallet
+	WalletProjection WalletProjection
+}
+
+func NewWalletProjection(walletID, lastEventID string, balance, pendingDebit, pendingCredit decimal.Decimal) WalletProjection {
 	tt := time.Now().UTC().Truncate(time.Microsecond)
 
 	return WalletProjection{
@@ -88,7 +115,6 @@ func NewWalletProjection(walletID, lastEventID string, balance, pendingDebit, pe
 		PendingDebit:  pendingDebit,
 		PendingCredit: pendingCredit,
 		LastEventID:   lastEventID,
-		LastSequence:  0,
 		CreatedAt:     tt,
 		UpdatedAt:     tt,
 	}

@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"crypto/tls"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -10,21 +9,12 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 
-	localConfiguration "github.com/buni/cskins/pkg/configuration"
-	"github.com/buni/go-libs/chix"
-	"github.com/buni/go-libs/configuration"
-	"github.com/buni/go-libs/database"
-	"github.com/buni/go-libs/database/pgxtx"
-	"github.com/buni/go-libs/sloglog"
+	"github.com/buni/wallet/internal/pkg/sloglog"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/nats-io/nats.go"
 	"go.uber.org/zap"
 	"go.uber.org/zap/exp/zapslog"
 	"go.uber.org/zap/zapcore"
@@ -34,47 +24,41 @@ import (
 
 // Server ...
 type Server struct {
-	Context       context.Context
-	cancel        func()
-	Logger        *slog.Logger
-	ZapLogger     *zap.Logger
-	TxWrapper     *pgxtx.TxWrapper
-	Router        *chi.Mux
-	RouterX       *chix.Router
-	Config        *localConfiguration.Configuration
-	Txm           database.TransactionManager
-	NatsConn      *nats.Conn
-	JetstreamConn nats.JetStreamContext
-	httpServer    *http.Server
-	done          chan os.Signal
-	gracePeriod   time.Duration
+	Context     context.Context
+	cancel      func()
+	Logger      *slog.Logger
+	Router      *chi.Mux
+	httpServer  *http.Server
+	host        string
+	done        chan os.Signal
+	gracePeriod time.Duration
+	IdleTimeout time.Duration
 }
 
-// Option ...
 type Option func(*Server) error
 
-// WithGracePeriod ...
 func WithGracePeriod(gracePeriod time.Duration) Option {
 	return func(s *Server) error {
 		s.gracePeriod = gracePeriod
-
 		return nil
 	}
 }
 
-// NewServer ...
+func WithHost(host string) Option {
+	return func(s *Server) error {
+		s.host = host
+		return nil
+	}
+}
+
 func NewServer(ctx context.Context, opts ...Option) (server *Server, err error) {
 	server = &Server{
-		gracePeriod: 1 * time.Second,
+		gracePeriod: 10 * time.Second,
+		host:        ":8080",
 		done:        make(chan os.Signal, 1),
 	}
 
 	signal.Notify(server.done, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
-
-	server.Config, err = configuration.NewConfiguration[localConfiguration.Configuration]()
-	if err != nil {
-		return nil, fmt.Errorf("failed to create configuration: %w", err)
-	}
 
 	server.Context, server.cancel = context.WithCancel(ctx)
 
@@ -85,62 +69,14 @@ func NewServer(ctx context.Context, opts ...Option) (server *Server, err error) 
 
 	server.Logger = slog.New(sloglog.ApplyMiddleware(zapslog.NewHandler(zapLogger.Core(), &zapslog.HandlerOptions{AddSource: true})))
 
-	server.ZapLogger = zapLogger
-
 	slog.SetDefault(server.Logger)
-
-	zap.ReplaceGlobals(zapLogger)
 
 	server.Context = sloglog.ToContext(server.Context, server.Logger)
 
 	server.Router = chi.NewRouter()
 
-	server.Router.NotFound(chix.NotFoundHandler)
-	server.Router.MethodNotAllowed(chix.MethodNotAllowedHandler)
 	server.Router.Use(middleware.Recoverer)
 	server.Router.Use(middleware.Logger)
-	server.RouterX = chix.NewRouter()
-
-	if server.Config.Database.Host != "" || server.Config.Database.URL != "" { //
-		var pgxConf *pgxpool.Config
-		server.Config.Database.URL = strings.ReplaceAll(server.Config.Database.URL, "\n", "")
-		pgxConf, err = pgxpool.ParseConfig(server.Config.Database.ToURL())
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse pgx config: %w", err)
-		}
-
-		pgxPool, err := pgxpool.NewWithConfig(ctx, pgxConf)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create pg session: %w", err)
-		}
-
-		err = pgxPool.Ping(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("failed to ping pg: %w", err)
-		}
-
-		server.TxWrapper = pgxtx.NewTxWrapper(pgxPool, pgx.TxOptions{})
-
-		server.Txm = pgxtx.NewTransactionManager(pgxPool, pgx.TxOptions{})
-	}
-
-	if server.Config.NATS.Address != "" || server.Config.NATS.URL != "" {
-		natsOpts := []nats.Option{}
-		if server.Config.NATS.JWT != "" && server.Config.NATS.Seed != "" {
-			natsOpts = append(natsOpts, nats.UserJWTAndSeed(server.Config.NATS.JWT, server.Config.NATS.Seed), nats.Secure(&tls.Config{ //nolint:gosec
-				InsecureSkipVerify: true, //nolint:gosec
-			}))
-		}
-
-		server.NatsConn, err = nats.Connect(server.Config.NATS.ToURL(), natsOpts...)
-		if err != nil {
-			return nil, fmt.Errorf("failed to connect to nats: %w", err)
-		}
-		server.JetstreamConn, err = server.NatsConn.JetStream()
-		if err != nil {
-			return nil, fmt.Errorf("failed to connect to jetstream: %w", err)
-		}
-	}
 
 	for _, opt := range opts {
 		err = opt(server)
@@ -152,15 +88,12 @@ func NewServer(ctx context.Context, opts ...Option) (server *Server, err error) 
 	return server, nil
 }
 
-// Start ...
 func (a *Server) Start() error {
 	a.Logger.InfoContext(a.Context, "starting server")
 	a.httpServer = &http.Server{
-		Addr:              a.Config.Service.ToHost(),
-		Handler:           h2c.NewHandler(a.Router, &http2.Server{}),
-		ReadHeaderTimeout: 120 * time.Second,
-		IdleTimeout:       120 * time.Second,
-		BaseContext:       func(_ net.Listener) context.Context { return a.Context },
+		Addr:        a.host,
+		Handler:     h2c.NewHandler(a.Router, &http2.Server{}),
+		BaseContext: func(_ net.Listener) context.Context { return a.Context },
 	}
 
 	go func() {

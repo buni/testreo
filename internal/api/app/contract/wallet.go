@@ -14,7 +14,7 @@ type WalletRepository interface {
 
 type WalletEventRepository interface {
 	Create(ctx context.Context, event entity.WalletEvent) (entity.WalletEvent, error)
-	GetByWalletID(ctx context.Context, walletID string) ([]entity.WalletEvent, error)
+	ListByWalletID(ctx context.Context, walletID string) ([]entity.WalletEvent, error)
 }
 
 type WalletProjectionRepository interface {
@@ -24,11 +24,10 @@ type WalletProjectionRepository interface {
 }
 
 type WalletService interface {
-	Create(ctx context.Context, req request.CreateWallet) (entity.Wallet, error)
-	Get(ctx context.Context, req request.GetWallet) (entity.Wallet, error)
-	GetTransactions(ctx context.Context, req request.GetWalletTransactions) ([]entity.WalletEvent, error)
-	Debit(ctx context.Context, req request.DebitWallet) (entity.WalletEvent, error)
-	Credit(ctx context.Context, req request.CreditWallet) (entity.WalletEvent, error)
-	CompleteTransfer(ctx context.Context, req request.CompleteTransfer) (entity.WalletEvent, error)
-	RevertTransfer(ctx context.Context, req request.RevertTransfer) (entity.WalletEvent, error)
+	Create(ctx context.Context, req *request.CreateWallet) (entity.Wallet, error)
+	Get(ctx context.Context, req *request.GetWallet) (entity.WalletBalanceProjection, error)
+	DebitTransfer(ctx context.Context, req *request.DebitTransfer) (entity.WalletEvent, error)
+	CreditTransfer(ctx context.Context, req *request.CreditTransfer) (entity.WalletEvent, error)
+	CompleteTransfer(ctx context.Context, req *request.CompleteTransfer) (entity.WalletEvent, error)
+	RevertTransfer(ctx context.Context, req *request.RevertTransfer) (entity.WalletEvent, error)
 }

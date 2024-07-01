@@ -13,7 +13,8 @@ CREATE INDEX idx_wallet_user_id ON wallets (reference_id);
 CREATE TABLE wallet_projections (
     wallet_id uuid PRIMARY KEY,
     balance decimal NOT NULL,
-    last_sequence bigint NOT NULL,
+    pending_debit decimal NOT NULL,
+    pending_credit decimal NOT NULL,
     last_event_id uuid NOT NULL,
     created_at timestamp DEFAULT statement_timestamp(),
     updated_at timestamp DEFAULT statement_timestamp()
@@ -21,7 +22,6 @@ CREATE TABLE wallet_projections (
 
 CREATE TABLE wallet_events (
     id uuid PRIMARY KEY,
-    sequence bigint NOT NULL,
     version bigint NOT NULL,
     transfer_id uuid text NOT NULL,
     reference_id uuid text NOT NULL,
@@ -33,3 +33,5 @@ CREATE TABLE wallet_events (
 );
 
 CREATE UNIQUE INDEX idx_wallet_events_wallet_id_transfer_id_event_type ON wallet_events (wallet_id, transfer_id, event_type);
+
+CREATE UNIQUE INDEX idx_wallet_events_wallet_id_sequence ON wallet_events (wallet_id, sequence);
