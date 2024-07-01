@@ -26,7 +26,6 @@ type Subscriber struct {
 func NewJetstreamSubscriber(jetstreamConn nats.JetStreamContext) *Subscriber {
 	return &Subscriber{
 		jetstreamConn: jetstreamConn,
-		wg:            sync.WaitGroup{},
 	}
 }
 
@@ -66,7 +65,9 @@ func (s *Subscriber) Subscribe(ctx context.Context, topic string, _ ...pubsub.Su
 			default:
 				msg, err := sub.Fetch(1, nats.Context(ctx))
 				if err != nil || len(msg) == 0 {
-					logger.ErrorContext(ctx, "error fetching jetstream msgs ", sloglog.Error(err))
+					if !errors.Is(err, context.DeadlineExceeded) {
+						logger.ErrorContext(ctx, "error fetching jetstream msgs", sloglog.Error(err))
+					}
 					continue
 				}
 				msgs <- &jetstreamSubscriberMessage{

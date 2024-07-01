@@ -17,10 +17,6 @@ type Publisher interface {
 	Publish(ctx context.Context, msg *Message, opts ...PublishOption) error
 }
 
-type PublisherWithEvent interface {
-	Publisher
-}
-
 type Headers map[string]string
 
 // Message holds the payload and headers of an event.

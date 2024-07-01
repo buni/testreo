@@ -8,6 +8,7 @@ import (
 	"github.com/buni/wallet/internal/api/app/entity"
 	"github.com/buni/wallet/internal/api/app/request"
 	"github.com/buni/wallet/internal/pkg/database"
+	"github.com/buni/wallet/internal/pkg/sloglog"
 	"github.com/shopspring/decimal"
 )
 
@@ -49,7 +50,7 @@ func (s *Service) Create(ctx context.Context, req *request.CreateWallet) (result
 			return fmt.Errorf("failed to create wallet: %w", err)
 		}
 
-		projection := entity.NewWalletProjection(result.ID, "", decimal.NewFromInt(0), decimal.NewFromInt(0), decimal.NewFromInt(0))
+		projection := entity.NewWalletProjection(result.ID, result.ID, decimal.NewFromInt(0), decimal.NewFromInt(0), decimal.NewFromInt(0))
 
 		_, err = s.projectionRepo.Create(ctx, projection)
 		if err != nil {
@@ -163,7 +164,7 @@ func (s *Service) CreditTransfer(ctx context.Context, req *request.CreditTransfe
 
 		projection := &entity.WalletProjection{}
 
-		err = ProcessEvents(projection, events)
+		err = ProcessEvents(ctx, projection, events)
 		if err != nil {
 			return fmt.Errorf("failed to process wallet events: %w", err)
 		}
@@ -244,6 +245,45 @@ func (s *Service) RevertTransfer(ctx context.Context, req *request.RevertTransfe
 		err = s.publisher.PublishCreated(ctx, result)
 		if err != nil {
 			return fmt.Errorf("failed to publish wallet event: %w", err)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return
+	}
+
+	return result, nil
+}
+
+func (s *Service) RebuildWalletProjection(ctx context.Context, walletID string) (result entity.WalletProjection, err error) {
+	logger := sloglog.FromContext(ctx)
+	err = s.txm.Run(ctx, func(ctx context.Context) error {
+		projection, err := s.projectionRepo.Get(ctx, walletID)
+		if err != nil {
+			return fmt.Errorf("failed to get wallet projection: %w", err)
+		}
+
+		events, err := s.eventRepo.ListByWalletID(ctx, walletID)
+		if err != nil {
+			return fmt.Errorf("failed to list wallet events: %w", err)
+		}
+
+		if len(events) != 0 {
+			if events[len(events)-1].ID <= projection.LastEventID {
+				logger.InfoContext(ctx, "no new events to process skipping rebuild")
+				return nil
+			}
+		}
+
+		err = ProcessEvents(ctx, &result, events)
+		if err != nil {
+			return fmt.Errorf("failed to process wallet events: %w", err)
+		}
+
+		_, err = s.projectionRepo.Update(ctx, result)
+		if err != nil {
+			return fmt.Errorf("failed to update wallet projection: %w", err)
 		}
 
 		return nil

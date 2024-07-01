@@ -3,17 +3,21 @@ module github.com/buni/wallet
 go 1.22.1
 
 require (
+	github.com/Masterminds/squirrel v1.5.4
 	github.com/ettle/strcase v0.2.0
+	github.com/georgysavva/scany/v2 v2.1.3
 	github.com/ggicci/httpin v0.19.0
 	github.com/go-chi/chi/v5 v5.1.0
 	github.com/go-playground/locales v0.14.1
 	github.com/go-playground/universal-translator v0.18.1
 	github.com/go-playground/validator/v10 v10.22.0
 	github.com/gofrs/uuid v4.4.0+incompatible
+	github.com/iZettle/structextract v1.2.0
 	github.com/jackc/pgx/v5 v5.6.0
 	github.com/jinzhu/copier v0.4.0
 	github.com/nats-io/nats.go v1.36.0
 	github.com/shopspring/decimal v1.4.0
+	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0
 	github.com/stretchr/testify v1.9.0
 	go.uber.org/zap v1.27.0
@@ -22,14 +26,12 @@ require (
 )
 
 require (
-	github.com/Masterminds/squirrel v1.5.4 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.3 // indirect
-	github.com/georgysavva/scany/v2 v2.1.3 // indirect
 	github.com/ggicci/owl v0.8.2 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
-	github.com/iZettle/structextract v1.2.0 // indirect
+	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect
 	github.com/jackc/puddle/v2 v2.2.1 // indirect

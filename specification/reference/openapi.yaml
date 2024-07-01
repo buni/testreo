@@ -5,20 +5,39 @@ info:
   title: Wallet Service
   version: '1.0'
 servers:
-  - url: 'http://localhost:3000'
+  - url: 'http://localhost:8080'
 paths:
   /v1/wallets:
-    get:
-      summary: Your GET endpoint
-      tags: []
-      responses: {}
-      operationId: get-v1-wallets
     post:
       summary: ''
       operationId: post-v1-wallets
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: ../models/wallet.yaml
+              examples:
+                Example 1:
+                  value:
+                    id: 123e4567-e89b-12d3-a456-426614174000
+                    reference_id: ref-123456789
+                    balance: '100.00'
+                    pending_debit: '10.00'
+                    pending_credit: '5.00'
+                    created_at: '2023-01-01T12:00:00Z'
+                    updated_at: '2023-01-02T12:00:00Z'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reference_id:
+                  type: string
+              required:
+                - reference_id
   '/v1/wallets/{walletID}':
     parameters:
       - schema:
@@ -27,76 +46,107 @@ paths:
         in: path
         required: true
     get:
-      summary: Your GET endpoint
+      summary: get wallet by ID
       tags: []
-      responses: {}
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: ../models/wallet.yaml
       operationId: get-v1-wallets-walletID
-  '/v1/wallets/{walletID}/transactions':
+  '/v1/wallets/{walletID}/transfers/debit':
     parameters:
       - schema:
           type: string
         name: walletID
         in: path
         required: true
-    get:
-      summary: Your GET endpoint
-      tags: []
-      responses: {}
-      operationId: get-v1-wallets-walletID-transfers
     post:
-      summary: ''
-      operationId: post-v1-wallets-walletID-transactions
+      summary: Create debit transfer 
+      tags: []
       responses:
         '200':
           description: OK
-  '/v1/wallets/{walletID}/transactions/debit':
+          content:
+            application/json:
+              schema:
+                $ref: ../models/wallet_events.yaml
+      operationId: get-v1-wallets-walletID-transfers-debit
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reference_id:
+                  type: string
+                transfer_id:
+                  type: string
+                amount:
+                  type: string
+                status:
+                  type: string
+                  enum:
+                    - pending
+                    - completed
+              required:
+                - transfer_id
+                - amount
+                - status
+  '/v1/wallets/{walletID}/transfers/credit':
     parameters:
       - schema:
           type: string
         name: walletID
         in: path
         required: true
-    get:
-      summary: Your GET endpoint
-      tags: []
-      responses: {}
-      operationId: get-v1-wallets-walletID-transactions-debit
-  '/v1/wallets/{walletID}/transactions/credit':
-    parameters:
-      - schema:
-          type: string
-        name: walletID
-        in: path
-        required: true
-    get:
-      summary: Your GET endpoint
-      tags: []
-      responses: {}
-      operationId: get-v1-wallets-walletID-transactions-credit
-  '/v1/wallets/{walletID}/transactions/{transactionID}/complete':
-    parameters:
-      - schema:
-          type: string
-        name: walletID
-        in: path
-        required: true
-      - schema:
-          type: string
-        name: transactionID
-        in: path
-        required: true
-    get:
-      summary: Your GET endpoint
-      tags: []
-      responses: {}
-      operationId: get-v1-wallets-walletID-transactions-transactionID-complete
     post:
-      summary: ''
-      operationId: post-v1-wallets-walletID-transactions-transactionID-complete
+      summary: Create credit transfer 
+      tags: []
       responses:
         '200':
           description: OK
-  '/v1/wallets/{walletID}/transactions/{transactionID}/revert':
+          content:
+            application/json:
+              schema:
+                $ref: ../models/wallet_events.yaml
+              examples:
+                Example 1:
+                  value:
+                    id: event-123e4567-e89b-12d3-a456-426614174000
+                    version: 1
+                    transfer_id: transfer-123e4567-e89b-12d3-a456-426614174000
+                    reference_id: ref-123456789
+                    wallet_id: wallet-123e4567-e89b-12d3-a456-426614174000
+                    amount: '100.00'
+                    event_type: debit_transfer
+                    transfer_status: pending
+                    created_at: '2023-01-01T12:00:00Z'
+      operationId: get-v1-wallets-walletID-transfers-credit
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reference_id:
+                  type: string
+                transfer_id:
+                  type: string
+                amount:
+                  type: string
+                status:
+                  type: string
+                  enum:
+                    - pending
+                    - completed
+              required:
+                - transfer_id
+                - amount
+                - status
+  '/v1/wallets/{walletID}/transfers/{transferID}/complete':
     parameters:
       - schema:
           type: string
@@ -105,19 +155,85 @@ paths:
         required: true
       - schema:
           type: string
-        name: transactionID
+        name: transferID
         in: path
         required: true
-    get:
-      summary: Your GET endpoint
-      tags: []
-      responses: {}
-      operationId: get-openapi.yamlv1-wallets-walletID-transactions-transactionID-revert
     post:
-      summary: ''
-      operationId: post-v1-wallets-walletID-transactions-transactionID-revert
+      summary: 'Complete transfer'
+      operationId: post-v1-wallets-walletID-transfers-transferID-complete
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: ../models/wallet_events.yaml
+              examples:
+                Example 1:
+                  value:
+                    id: event-123e4567-e89b-12d3-a456-426614174000
+                    version: 1
+                    transfer_id: transfer-123e4567-e89b-12d3-a456-426614174000
+                    reference_id: ref-123456789
+                    wallet_id: wallet-123e4567-e89b-12d3-a456-426614174000
+                    amount: '100.00'
+                    event_type: debit_transfer
+                    transfer_status: pending
+                    created_at: '2023-01-01T12:00:00Z'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                transfer_id:
+                  type: string
+              required:
+                - transfer_id
+  '/v1/wallets/{walletID}/transfers/{transferID}/revert':
+    parameters:
+      - schema:
+          type: string
+        name: walletID
+        in: path
+        required: true
+      - schema:
+          type: string
+        name: transferID
+        in: path
+        required: true
+    post:
+      summary: 'Revert transfer'
+      operationId: post-v1-wallets-walletID-transfers-transferID-revert
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: ../models/wallet_events.yaml
+              examples:
+                Example 1:
+                  value:
+                    id: event-123e4567-e89b-12d3-a456-426614174000
+                    version: 1
+                    transfer_id: transfer-123e4567-e89b-12d3-a456-426614174000
+                    reference_id: ref-123456789
+                    wallet_id: wallet-123e4567-e89b-12d3-a456-426614174000
+                    amount: '100.00'
+                    event_type: debit_transfer
+                    transfer_status: pending
+                    created_at: '2023-01-01T12:00:00Z'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                transfer_id:
+                  type: string
+              required:
+                - transfer_id
+        description: ''
 components:
   schemas: {}

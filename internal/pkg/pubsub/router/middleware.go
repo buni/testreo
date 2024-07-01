@@ -4,9 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
+	"runtime/debug"
 
 	"github.com/buni/wallet/internal/pkg/database"
 	"github.com/buni/wallet/internal/pkg/pubsub"
+	"github.com/buni/wallet/internal/pkg/sloglog"
 )
 
 type ComplexMiddleware func(next HandleSubscribe) HandleSubscribe
@@ -131,4 +134,84 @@ func (m *atomicTransactionMiddleware) Handle(ctx context.Context, msg pubsub.Sub
 	}
 
 	return nil
+}
+
+type loggerMiddleware struct {
+	logger *slog.Logger
+	next   HandleFunc
+}
+
+func LoggerMiddleware() func(next HandleFunc) HandleFunc {
+	return func(next HandleFunc) HandleFunc {
+		return &loggerMiddleware{next: next}
+	}
+}
+
+func LoggerMiddlewareWithLogger(logger *slog.Logger) func(next HandleFunc) HandleFunc {
+	return func(next HandleFunc) HandleFunc {
+		return &loggerMiddleware{next: next, logger: logger}
+	}
+}
+
+func (m *loggerMiddleware) Handle(ctx context.Context, msg pubsub.SubscriberMessage) (err error) {
+	logger := sloglog.FromContext(ctx)
+
+	if m.logger != nil {
+		logger = m.logger
+	}
+
+	handler, ok := m.next.(HandleSubscribe)
+	if !ok {
+		logger.Error("failed to cast handler to HandleSubscribe")
+		return m.next.Handle(ctx, msg) //nolint:wrapcheck
+	}
+
+	logger = logger.With(slog.String("consumer", "pubsub"), slog.String("handler", handler.HandlerName()), slog.String("topic", handler.Topic()))
+
+	msgBody, err := msg.Message(ctx)
+	if err != nil {
+		logger.Error("failed to get message", sloglog.Error(err))
+		return err //nolint:wrapcheck
+	}
+
+	if msgBody.ID != nil {
+		logger = logger.With(slog.String("message_id", *msgBody.ID))
+	}
+
+	if msgBody.Key != "" {
+		logger = logger.With(slog.String("message_key", msgBody.Key))
+	}
+
+	ctx = sloglog.ToContext(ctx, logger)
+
+	err = m.next.Handle(ctx, msg)
+	if err != nil {
+		logger.Error("failed to handle message", sloglog.Error(err))
+		return err //nolint:wrapcheck
+	}
+
+	return nil
+}
+
+type panicRecoveryMiddleware struct {
+	next HandleFunc
+}
+
+func PanicRecoveryMiddleware(next HandleFunc) HandleFunc {
+	return &panicRecoveryMiddleware{next: next}
+}
+
+func (m *panicRecoveryMiddleware) Handle(ctx context.Context, msg pubsub.SubscriberMessage) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("panic: %v", r)
+			sloglog.FromContext(ctx).Error("panic recovered", sloglog.Error(err), slog.Any("stack", string(debug.Stack())))
+		}
+	}()
+
+	err = m.next.Handle(ctx, msg)
+	if err != nil {
+		return
+	}
+	return
 }

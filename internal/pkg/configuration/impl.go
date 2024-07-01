@@ -7,6 +7,16 @@ import (
 	"runtime/debug"
 )
 
+type Configuration struct {
+	Database `mapstructure:",squash"`
+	Service  `mapstructure:",squash"`
+	NATS     `mapstructure:",squash"`
+}
+
+func (c *Configuration) SetDefaults() {
+	c.Service.SetDefaults()
+}
+
 type Database struct {
 	Host     string `json:"database_host" mapstructure:"database_host"`
 	Port     string `json:"database_port" mapstructure:"database_port"`

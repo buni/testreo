@@ -23,15 +23,12 @@ func NewJetStreamPublisher(natsConn *nats.Conn, jetstreamConn nats.JetStreamCont
 	}, nil
 }
 
-func (p *Publisher) Publish(ctx context.Context, msg *pubsub.Message, _ ...pubsub.PublishOption) error { // TODO: add traces
-	_, err := p.jetstreamConn.AddStream(&nats.StreamConfig{ //nolint:exhaustruct
-		// FIXME: add all fields
-		Name:     msg.Topic,
-		Subjects: []string{msg.Topic + ".*"},
-		Storage:  nats.FileStorage,
-		// Replicas:    3,
+func (p *Publisher) Publish(ctx context.Context, msg *pubsub.Message, _ ...pubsub.PublishOption) error {
+	_, err := p.jetstreamConn.AddStream(&nats.StreamConfig{
+		Name:        msg.Topic,
+		Subjects:    []string{msg.Topic + ".*"},
+		Storage:     nats.FileStorage,
 		AllowDirect: true,
-		// MirrorDirect: true,
 	}, nats.Context(ctx))
 	if err != nil && !errors.Is(err, nats.ErrStreamNameAlreadyInUse) {
 		return fmt.Errorf("failed to create stream: %w", err)

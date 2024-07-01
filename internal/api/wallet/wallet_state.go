@@ -1,10 +1,16 @@
 package wallet
 
 import (
+	"context"
+	"log/slog"
+	"time"
+
 	"github.com/buni/wallet/internal/api/app/entity"
+	"github.com/buni/wallet/internal/pkg/sloglog"
 )
 
-func ProcessEvents(projection *entity.WalletProjection, events []entity.WalletEvent) error {
+func ProcessEvents(ctx context.Context, projection *entity.WalletProjection, events []entity.WalletEvent) error {
+	logger := sloglog.FromContext(ctx)
 	if len(events) == 0 {
 		return nil
 	}
@@ -47,6 +53,7 @@ func ProcessEvents(projection *entity.WalletProjection, events []entity.WalletEv
 		case entity.EventTypeUpdateTransferStatus:
 			idx, ok := eventMapping[event.TransferID]
 			if !ok {
+				logger.WarnContext(ctx, "transfer id not found", slog.String("transfer_id", event.TransferID), slog.Any("event", event))
 				continue // can't find the transfer id, skip since we mostly likely already processed this event, there is a chance that the event is out of order too and if that is a possibility we can add a safe guard
 			}
 
@@ -96,6 +103,7 @@ func ProcessEvents(projection *entity.WalletProjection, events []entity.WalletEv
 	lastIdx := len(events) - 1
 	projection.WalletID = events[lastIdx].WalletID
 	projection.LastEventID = events[lastIdx].ID
+	projection.UpdatedAt = time.Now().UTC().Truncate(time.Microsecond)
 
 	return nil
 }

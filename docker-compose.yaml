@@ -23,6 +23,22 @@ services:
       retries: 10
     env_file:
       - .env
+  nats:
+    image: "nats:latest"
+    healthcheck:
+      test: echo $$(wget --server-response http://localhost:8222/varz 2>&1 | grep  '200 OK') | grep '200'  || exit 1
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    env_file:
+      - .env
+    ports:
+      - "4222:4222"
+      - "6222:6222"
+      - "8222:8222"
+    command:
+      - "--js"
   api:
     build:
       context: .
@@ -49,7 +65,7 @@ services:
       - postgres
     restart: always
     entrypoint: sh -c `make atlas-migrate`
-  seeder:
+  worker:
     build:
       context: .
       dockerfile: ./Dockerfile.dev
@@ -60,7 +76,7 @@ services:
     depends_on:
       - postgres
     restart: always
-    entrypoint: sh -c `go run cmd/main.go seeder`
+    entrypoint: sh -c `wgo run cmd/main.go worker`
   tools:
     build:
       context: .

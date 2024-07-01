@@ -1,6 +1,7 @@
 package wallet_test
 
 import (
+	"context"
 	"log"
 	"testing"
 	"time"
@@ -219,7 +220,7 @@ func TestProcessEvents(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			projection := &entity.WalletProjection{}
-			err := wallet.ProcessEvents(projection, tt.events)
+			err := wallet.ProcessEvents(context.Background(), projection, tt.events)
 			log.Println(projection, err)
 			if tt.expectedErr != nil {
 				assert.Empty(t, projection)

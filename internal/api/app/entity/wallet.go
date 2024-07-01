@@ -28,11 +28,11 @@ const (
 )
 
 const (
-	WalletEventsTopic   = "wallet.events"
+	WalletEventsTopic   = "wallet_events"
 	WalletEventsCreated = "created"
 )
 
-//go:generate enumer -type=WalletEventType,TransferStatus -transform=snake -output=wallet_enum.go -json -sql -text
+//go:generate enumer -type=WalletEventType,TransferStatus -trimprefix=EventType,TransferStatus -transform=snake -output=wallet_enum.go -json -sql -text
 type WalletEventType uint
 
 type TransferStatus uint
@@ -107,8 +107,8 @@ type WalletProjection struct {
 }
 
 type WalletBalanceProjection struct {
-	Wallet           Wallet
-	WalletProjection WalletProjection
+	Wallet
+	WalletProjection
 }
 
 func NewWalletProjection(walletID, lastEventID string, balance, pendingDebit, pendingCredit decimal.Decimal) WalletProjection {

@@ -1,0 +1,49 @@
+type: object
+title: WalletEvent
+properties:
+  id:
+    type: string
+    example: "event-123e4567-e89b-12d3-a456-426614174000"
+  version:
+    type: integer
+    format: int32
+    example: 1
+  transfer_id:
+    type: string
+    example: "transfer-123e4567-e89b-12d3-a456-426614174000"
+  reference_id:
+    type: string
+    example: "ref-123456789"
+  wallet_id:
+    type: string
+    example: "wallet-123e4567-e89b-12d3-a456-426614174000"
+  amount:
+    type: string
+    format: decimal
+    example: "100.00"
+  event_type:
+    type: string
+    enum:
+    - debit_transfer
+    - credit_transfer
+    - update_transfer_status
+  transfer_status:
+    type: string
+    enum:
+    - pending
+    - completed
+    - failed
+  created_at:
+    type: string
+    format: date-time
+    example: "2023-01-01T12:00:00Z"
+required:
+  - id
+  - version
+  - transfer_id
+  - reference_id
+  - wallet_id
+  - amount
+  - event_type
+  - transfer_status
+  - created_at

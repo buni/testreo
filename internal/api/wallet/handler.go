@@ -107,10 +107,10 @@ func (h *Handler) RevertTransfer(ctx context.Context, req *request.RevertTransfe
 }
 
 func (h *Handler) RegisterRoutes(r chi.Router) {
-	r.Route("/v1/wallets", func(r chi.Router) {
+	r.Route("/wallets", func(r chi.Router) {
+		r.Post("/", handler.WrapDefaultBasic(h.Create))
 		r.Route("/{walletID}", func(r chi.Router) {
 			r.Get("/", handler.WrapDefaultBasic(h.Get))
-			r.Post("/", handler.WrapDefaultBasic(h.Create))
 			r.Route("/transfers", func(r chi.Router) {
 				r.Post("/debit", handler.WrapDefaultBasic(h.DebitTransfer))
 				r.Post("/credit", handler.WrapDefaultBasic(h.CreditTransfer))

@@ -16,9 +16,9 @@ type DebitTransfer struct {
 type CreditTransfer struct {
 	WalletID    string                `json:"-" in:"path=walletID"`
 	ReferenceID string                `json:"reference_id"`
-	TransferID  string                `json:"transfer_id"`
-	Amount      decimal.Decimal       `json:"amount"`
-	Status      entity.TransferStatus `json:"status"`
+	TransferID  string                `json:"transfer_id" validate:"required"`
+	Amount      decimal.Decimal       `json:"amount" validate:"required"`
+	Status      entity.TransferStatus `json:"status" validate:"required"`
 }
 
 type CompleteTransfer struct {

@@ -3,10 +3,12 @@ package router
 import (
 	"context"
 	"fmt"
+	"log/slog"
+	"os"
 	"sync"
 
 	"github.com/buni/wallet/internal/pkg/pubsub"
-	"go.uber.org/zap"
+	"github.com/buni/wallet/internal/pkg/sloglog"
 )
 
 // Router ...
@@ -14,7 +16,7 @@ type Router struct {
 	handlers    []HandleSubscribe
 	middlewares []Middleware
 	concurrency int
-	logger      *zap.Logger
+	logger      *slog.Logger
 	wg          *sync.WaitGroup
 }
 
@@ -34,7 +36,7 @@ func WithConcurrency(concurrency int) Option {
 
 // WithLogger sets the logger for the router.
 // Defaults to zap.NewProduction().
-func WithLogger(logger *zap.Logger) Option {
+func WithLogger(logger *slog.Logger) Option {
 	return func(r *Router) error {
 		r.logger = logger
 		return nil
@@ -52,17 +54,12 @@ func WithMiddleware(middlewares ...Middleware) Option {
 
 // NewRouter creates a new router.
 func NewRouter(opts ...Option) (*Router, error) {
-	logger, err := zap.NewProduction()
-	if err != nil {
-		return nil, fmt.Errorf("failed to create logger: %w", err)
-	}
-
 	r := &Router{
-		handlers:    []HandleSubscribe{},
 		concurrency: 1,
-		middlewares: []Middleware{},
-		logger:      logger,
-		wg:          &sync.WaitGroup{},
+		logger: slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{
+			AddSource: true,
+		})),
+		wg: &sync.WaitGroup{},
 	}
 
 	for _, opt := range opts {
@@ -112,7 +109,7 @@ func (r *Router) processor(ctx context.Context, h HandleFunc, msgChan <-chan pub
 				case msg := <-msgChan:
 					err := h.Handle(ctx, msg)
 					if err != nil {
-						r.logger.Error("failed to drain msgs", zap.Error(err))
+						r.logger.Error("failed to drain msgs", sloglog.Error(err))
 					}
 				default: // if there are no more messages, exit the function
 					return
@@ -122,7 +119,7 @@ func (r *Router) processor(ctx context.Context, h HandleFunc, msgChan <-chan pub
 		case msg := <-msgChan:
 			err := h.Handle(ctx, msg)
 			if err != nil {
-				r.logger.Error("failed to execute handler", zap.Error(err))
+				r.logger.Error("failed to execute handler", sloglog.Error(err))
 			}
 		}
 	}

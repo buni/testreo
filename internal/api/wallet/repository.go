@@ -65,7 +65,7 @@ func (r *Repository) Get(ctx context.Context, id string) (result entity.Wallet, 
 		return entity.Wallet{}, fmt.Errorf("failed to execute select query: %w", err)
 	}
 
-	return entity.Wallet{}, nil
+	return result, nil
 }
 
 var _ contract.WalletEventRepository = (*EventRepository)(nil)
@@ -107,7 +107,7 @@ func (r *EventRepository) ListByWalletID(ctx context.Context, walletID string) (
 		return nil, fmt.Errorf("failed to extract columns: %w", err)
 	}
 
-	query, args, err := sq.Select(columns...).From(r.table).PlaceholderFormat(sq.Dollar).Where(sq.Eq{"wallet_id": walletID}).ToSql()
+	query, args, err := sq.Select(columns...).From(r.table).PlaceholderFormat(sq.Dollar).Where(sq.Eq{"wallet_id": walletID}).OrderBy("id ASC").ToSql()
 	if err != nil {
 		return nil, fmt.Errorf("failed to build select query: %w", err)
 	}
