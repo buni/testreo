@@ -1,5 +1,15 @@
 # Wallet Service
 
+## Run tests (requires docker)
+Since tests unit tests and "integration" tests are not split up, you need to have docker running to run the tests, this uses https://github.com/ory/dockertest under the hood and might require a docker desktop configuration change (if there is an error when spinning up the test containers) 
+- `go test -v ./... -cover` will run all tests and show coverage
+
+## Linting the service 
+- `golangci-lint run --verbose` will run the linter
+## Starting the service
+- duplicate the `.env.example` file and rename it to `.env`
+- `make up` will start the service, after that you should be able to access the service on `localhost:8089`
+
 ## Tech stack
 - Postgres for the database
 - Nats (Jetstream) as the event bus
@@ -35,8 +45,7 @@
 ## Postman collection
 A postman collection and a basic openapi spec is included in the specification dir
 
-## Starting the service
-- `make up` will start the service, after that you should be able to access the service on `localhost:8089`
+
 
 ## Decisions 
 - Projections are stored in a separate table instead of a separate db/datastore, again this is for simplicity sake and could easily be changed
