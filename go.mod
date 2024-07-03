@@ -29,7 +29,7 @@ require (
 	go.uber.org/zap v1.27.0
 	go.uber.org/zap/exp v0.2.0
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
-	golang.org/x/net v0.25.0
+	golang.org/x/net v0.26.0
 )
 
 require (
