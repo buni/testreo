@@ -1,3 +1,4 @@
+//nolint:ireturn
 package router
 
 import (
@@ -51,13 +52,6 @@ type HandlerStruct[Event any] struct {
 	Handler[Event]
 	subscriber pubsub.Subscriber
 	unmarshal  func(data []byte, v any) error
-}
-
-type handleSubscribeUnion struct {
-	HandlerNameFunc
-	TopicFunc
-	HandleFunc
-	SubscribeFunc
 }
 
 // NewJSONHandler is a helper function that creates a new HandlerStruct[Event] with the json.Unmarshal function as the unmarshaler.

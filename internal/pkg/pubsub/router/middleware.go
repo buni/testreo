@@ -1,3 +1,4 @@
+//nolint:ireturn,wrapcheck
 package router
 
 import (
@@ -204,7 +205,7 @@ func PanicRecoveryMiddleware(next HandleFunc) HandleFunc {
 func (m *panicRecoveryMiddleware) Handle(ctx context.Context, msg pubsub.SubscriberMessage) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			err = fmt.Errorf("panic: %v", r)
+			err = fmt.Errorf("panic: %v", r) //nolint
 			sloglog.FromContext(ctx).Error("panic recovered", sloglog.Error(err), slog.Any("stack", string(debug.Stack())))
 		}
 	}()

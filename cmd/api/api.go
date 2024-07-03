@@ -9,7 +9,9 @@ import (
 	"github.com/buni/wallet/internal/pkg/configuration"
 	"github.com/buni/wallet/internal/pkg/database/pgxtx"
 	"github.com/buni/wallet/internal/pkg/pubsub/jetstream"
+	"github.com/buni/wallet/internal/pkg/render/errorhandler"
 	"github.com/buni/wallet/internal/pkg/server"
+	httpin_integration "github.com/ggicci/httpin/integration" //nolint
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -31,6 +33,12 @@ func NewCommand() *cobra.Command {
 }
 
 func main() error {
+	httpin_integration.UseGochiURLParam("path", chi.URLParam)
+	errorhandler.RegisterErrorHandler("validation_error_handler", errorhandler.ValidationErrorHandler)
+	errorhandler.RegisterErrorHandler("validation_field_errors_handler", errorhandler.ValidationFieldErrorsHandler)
+	errorhandler.RegisterErrorHandler("validation_field_error_handler", errorhandler.ValidationFieldErrorHandler)
+	errorhandler.RegisterErrorHandler("not_found_error_handler", errorhandler.NotFoundErrorHandler)
+
 	srv, err := server.NewServer(context.Background())
 	if err != nil {
 		return fmt.Errorf("failed to create server: %w", err)

@@ -11,8 +11,6 @@ import (
 	"github.com/buni/wallet/internal/pkg/syncx"
 	"github.com/ggicci/httpin"
 	"github.com/ggicci/httpin/core"
-	httpin_integtration "github.com/ggicci/httpin/integration" //nolint
-	"github.com/go-chi/chi/v5"
 )
 
 var (
@@ -31,10 +29,6 @@ type cacheValue struct {
 }
 
 var typeCache *syncx.SyncMap[reflect.Type, cacheValue] = &syncx.SyncMap[reflect.Type, cacheValue]{} //nolint
-
-func init() {
-	httpin_integtration.UseGochiURLParam("path", chi.URLParam)
-}
 
 // Decode ...
 // Passing a nil req *http.Request will result in a panic.
@@ -105,7 +99,7 @@ func enforceStructTag(s any, tag string) (hasFieldTags bool, err error) {
 		return false, ErrProvidedTypeShouldBeAStruct
 	}
 
-	for i := 0; i < v.NumField(); i++ {
+	for i := range v.NumField() {
 		tagValue := v.Type().Field(i).Tag.Get(tag)
 		if tagValue == "" {
 			return false, fmt.Errorf("missing tag %s on field %s: %w", tag, v.Type().Field(i).Name, ErrFoundAFieldWithoutMandatoryTag)

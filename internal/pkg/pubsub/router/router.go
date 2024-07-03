@@ -91,7 +91,7 @@ func (r *Router) Start(ctx context.Context) error {
 		if err != nil {
 			return fmt.Errorf("failed to create subscriber for handler: %w", err)
 		}
-		for i := 0; i < r.concurrency; i++ {
+		for range r.concurrency {
 			r.wg.Add(1)
 			go r.processor(ctx, h, msgChan) //nolint:errcheck
 		}
