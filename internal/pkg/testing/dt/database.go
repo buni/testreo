@@ -84,7 +84,6 @@ func SetupPostgres() *dockertest.Resource {
 		conf, err := pgxpool.ParseConfig(databaseURL)
 		if err != nil {
 			log.Println("failed to parse config", err)
-
 			return fmt.Errorf("failed to parse config: %w", err)
 		}
 

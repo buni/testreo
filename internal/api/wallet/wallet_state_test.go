@@ -2,7 +2,6 @@ package wallet_test
 
 import (
 	"context"
-	"log"
 	"testing"
 
 	"github.com/buni/wallet/internal/api/app/entity"
@@ -272,7 +271,6 @@ func TestProcessEvents(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			projection := &entity.WalletProjection{}
 			err := wallet.ProcessEvents(context.Background(), projection, tt.events)
-			log.Println(projection, err)
 			if tt.expectedErr != nil {
 				assert.Empty(t, projection)
 				assert.ErrorIs(t, tt.expectedErr, err)

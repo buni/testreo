@@ -2,7 +2,6 @@ package wallet_test
 
 import (
 	"context"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -157,7 +156,6 @@ func (s *WalletHandlerTestSuite) TestGetNotFound() {
 
 	recorder := httptest.NewRecorder()
 	handler.WrapDefaultBasic(s.handler.Get).ServeHTTP(recorder, httptest.NewRequest("GET", "/", nil).WithContext(s.ctx))
-	log.Println(recorder.Code, "recorder", recorder.Body.String())
 
 	s.statusCompare(recorder.Code, http.StatusNotFound, recorder.Body.String(), render.ErrorResponse{
 		Error: &render.Error{
