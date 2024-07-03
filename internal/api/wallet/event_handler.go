@@ -12,7 +12,7 @@ import (
 	"github.com/buni/wallet/internal/pkg/sloglog"
 )
 
-type WalletEventCreatedHandler struct { //nolint:revive
+type EventCreatedHandler struct {
 	svc contract.WalletService
 	txm database.TransactionManager
 }
@@ -20,38 +20,39 @@ type WalletEventCreatedHandler struct { //nolint:revive
 func NewWalletEventCreatedHandler(
 	svc contract.WalletService,
 	txm database.TransactionManager,
-) *WalletEventCreatedHandler {
-	return &WalletEventCreatedHandler{
+) *EventCreatedHandler {
+	return &EventCreatedHandler{
 		txm: txm,
 		svc: svc,
 	}
 }
 
-func (h *WalletEventCreatedHandler) HandlerName() string {
+func (h *EventCreatedHandler) HandlerName() string {
 	return "WalletEventCreatedHandler"
 }
 
-func (h *WalletEventCreatedHandler) Topic() string {
+func (h *EventCreatedHandler) Topic() string {
 	return entity.WalletEventsTopic + "." + entity.WalletEventsCreated
 }
 
-func (h *WalletEventCreatedHandler) SubscriberOptions() []pubsub.SubscriberOption {
+func (h *EventCreatedHandler) SubscriberOptions() []pubsub.SubscriberOption {
 	return []pubsub.SubscriberOption{}
 }
 
-func (h *WalletEventCreatedHandler) Handle(ctx context.Context, event *entity.WalletEvent, _ pubsub.SubscriberMessage) error {
+func (h *EventCreatedHandler) Handle(ctx context.Context, event *entity.WalletEvent, _ pubsub.SubscriberMessage) (err error) {
 	logger := sloglog.FromContext(ctx)
 
 	logger.InfoContext(ctx, "received event", slog.Any("event", event))
-	err := h.txm.Run(ctx, func(ctx context.Context) error {
-		_, err := h.svc.RebuildWalletProjection(ctx, event.WalletID)
+
+	err = h.txm.Run(ctx, func(ctx context.Context) error {
+		_, err = h.svc.RebuildWalletProjection(ctx, event)
 		if err != nil {
 			return fmt.Errorf("failed to rebuild wallet projection: %w", err)
 		}
 		return nil
 	})
 	if err != nil {
-		return fmt.Errorf("failed to handle message: %w", err)
+		return
 	}
 
 	return nil

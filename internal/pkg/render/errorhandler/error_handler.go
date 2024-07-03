@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strings"
 
+	"github.com/buni/wallet/internal/api/app/entity"
 	"github.com/buni/wallet/internal/pkg/render"
 	"github.com/buni/wallet/internal/pkg/syncx"
 )
@@ -15,6 +17,7 @@ func init() { //nolint:gochecknoinits
 	RegisterErrorHandler("validation_error_handler", ValidationErrorHandler)
 	RegisterErrorHandler("validation_field_errors_handler", ValidationFieldErrorsHandler)
 	RegisterErrorHandler("validation_field_error_handler", ValidationFieldErrorHandler)
+	RegisterErrorHandler("not_found_error_handler", NotFoundErrorHandler)
 }
 
 // RegisterErrorHandler registers an error handler, the error handlers are called in the order they are registered.
@@ -68,7 +71,22 @@ func ValidationErrorHandler(ctx context.Context, w http.ResponseWriter, err erro
 	return false
 }
 
-// ValidationFieldErrorsHandler handles FieldErrors errors, if err is of type render.FieldErrors it will be handled as a validation error.
+func NotFoundErrorHandler(ctx context.Context, w http.ResponseWriter, err error) bool {
+	if errors.Is(err, entity.ErrEntityNotFound) {
+		render.NewNotFoundErrorResponse(ctx, w, err)
+		return true
+	}
+	return false
+}
+
+func ConflictErrorHandler(ctx context.Context, w http.ResponseWriter, err error) bool {
+	if strings.Contains(err.Error(), "unique constraint") {
+		render.NewErrorResponse(ctx, w, http.StatusConflict, render.ConflictError, errors.New("entity already exists")) //nolint:goerr113
+		return true
+	}
+	return false
+}
+
 func ValidationFieldErrorsHandler(ctx context.Context, w http.ResponseWriter, err error) bool {
 	var fieldErrors *render.FieldErrors
 	if errors.As(err, &fieldErrors) {
@@ -79,7 +97,6 @@ func ValidationFieldErrorsHandler(ctx context.Context, w http.ResponseWriter, er
 	return false
 }
 
-// ValidationFieldErrorsHandler handles FieldError errors, if err is of type render.FieldError it will be handled as a validation error.
 func ValidationFieldErrorHandler(ctx context.Context, w http.ResponseWriter, err error) bool {
 	var fieldError *render.FieldError
 	if errors.As(err, &fieldError) {

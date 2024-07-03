@@ -38,15 +38,15 @@ type WalletEventType uint
 type TransferStatus uint
 
 type WalletEvent struct {
-	ID             string          `db:"id" json:"id"`
-	Version        int             `db:"version" json:"version"`
-	TransferID     string          `db:"transfer_id" json:"transfer_id"`
-	ReferenceID    string          `db:"reference_id" json:"reference_id"`
-	WalletID       string          `db:"wallet_id" json:"wallet_id"`
-	Amount         decimal.Decimal `db:"amount" json:"amount"`
-	EventType      WalletEventType `db:"event_type" json:"event_type"`
-	TransferStatus TransferStatus  `db:"transfer_status" json:"transfer_status"`
-	CreatedAt      time.Time       `db:"created_at" json:"created_at"`
+	ID          string          `db:"id" json:"id"`
+	Version     int             `db:"version" json:"version"`
+	TransferID  string          `db:"transfer_id" json:"transfer_id"`
+	ReferenceID string          `db:"reference_id" json:"reference_id"`
+	WalletID    string          `db:"wallet_id" json:"wallet_id"`
+	Amount      decimal.Decimal `db:"amount" json:"amount"`
+	EventType   WalletEventType `db:"event_type" json:"event_type"`
+	Status      TransferStatus  `db:"transfer_status" json:"transfer_status"`
+	CreatedAt   time.Time       `db:"created_at" json:"created_at"`
 }
 
 func NewWalletEvent(
@@ -61,15 +61,15 @@ func NewWalletEvent(
 	}
 
 	return WalletEvent{
-		ID:             id.String(),
-		Version:        WalletEventVersionOne,
-		TransferID:     transferID,
-		ReferenceID:    referenceID,
-		WalletID:       walletID,
-		Amount:         amount,
-		EventType:      eventType,
-		TransferStatus: transferStatus,
-		CreatedAt:      time.Now().UTC().Truncate(time.Microsecond),
+		ID:          id.String(),
+		Version:     WalletEventVersionOne,
+		TransferID:  transferID,
+		ReferenceID: referenceID,
+		WalletID:    walletID,
+		Amount:      amount,
+		EventType:   eventType,
+		Status:      transferStatus,
+		CreatedAt:   time.Now().UTC().Truncate(time.Microsecond),
 	}, nil
 }
 

@@ -2,6 +2,7 @@ package wallet
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
@@ -10,6 +11,7 @@ import (
 	"github.com/buni/wallet/internal/pkg/database/pgxtx"
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/iZettle/structextract"
+	"github.com/jackc/pgx/v5"
 )
 
 const (
@@ -62,6 +64,9 @@ func (r *Repository) Get(ctx context.Context, id string) (result entity.Wallet, 
 
 	err = pgxscan.Get(ctx, r.pgxpool, &result, query, args...)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return entity.Wallet{}, entity.ErrEntityNotFound
+		}
 		return entity.Wallet{}, fmt.Errorf("failed to execute select query: %w", err)
 	}
 
@@ -117,6 +122,10 @@ func (r *EventRepository) ListByWalletID(ctx context.Context, walletID string) (
 		return nil, fmt.Errorf("failed to execute select query: %w", err)
 	}
 
+	if result == nil {
+		result = []entity.WalletEvent{}
+	}
+
 	return result, nil
 }
 
@@ -166,6 +175,9 @@ func (r *ProjectionRepository) Get(ctx context.Context, walletID string) (result
 
 	err = pgxscan.Get(ctx, r.pgxpool, &result, query, args...)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return entity.WalletProjection{}, entity.ErrEntityNotFound
+		}
 		return entity.WalletProjection{}, fmt.Errorf("failed to execute select query: %w", err)
 	}
 
@@ -186,6 +198,9 @@ func (r *ProjectionRepository) Update(ctx context.Context, projection entity.Wal
 
 	err = pgxscan.Get(ctx, r.pgxpool, &projection, query, args...)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return entity.WalletProjection{}, entity.ErrEntityNotFound
+		}
 		return entity.WalletProjection{}, fmt.Errorf("failed to execute query: %w", err)
 	}
 

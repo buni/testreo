@@ -16,13 +16,13 @@ type Wallet struct {
 }
 
 type WalletEvent struct {
-	ID             string                 `json:"id"`
-	Version        int                    `json:"version"`
-	TransferID     string                 `json:"transfer_id"`
-	ReferenceID    string                 `json:"reference_id"`
-	WalletID       string                 `json:"wallet_id"`
-	Amount         decimal.Decimal        `json:"amount"`
-	EventType      entity.WalletEventType `json:"event_type"`
-	TransferStatus entity.TransferStatus  `json:"transfer_status"`
-	CreatedAt      time.Time              `json:"created_at"`
+	ID          string                 `json:"id"`
+	Version     int                    `json:"version"`
+	TransferID  string                 `json:"transfer_id"`
+	ReferenceID string                 `json:"reference_id"`
+	WalletID    string                 `json:"wallet_id"`
+	Amount      decimal.Decimal        `json:"amount"`
+	EventType   entity.WalletEventType `json:"event_type"`
+	Status      entity.TransferStatus  `json:"status"`
+	CreatedAt   time.Time              `json:"created_at"`
 }

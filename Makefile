@@ -35,6 +35,3 @@ atlas-status:
   	atlas migrate status \
   --dir "file://migrations?format=golang-migrate" \
   --url "$(DATABASE_URL_DEV)" 
-setup-hooks:
-	cp .github/pre-commit/pre-commit .git/hooks/pre-commit
-

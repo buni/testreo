@@ -69,7 +69,6 @@ linters:
    - bidichk
    - bodyclose
    - contextcheck
-   - dupl
    - durationcheck
    - errcheck
    - errname

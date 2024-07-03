@@ -3,6 +3,7 @@ package wallet
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/buni/wallet/internal/api/app/contract"
 	"github.com/buni/wallet/internal/api/app/request"
@@ -22,8 +23,8 @@ func NewHandler(svc contract.WalletService) *Handler {
 	}
 }
 
-func (h *Handler) Create(ctx context.Context, req *request.CreateWallet) (*response.Wallet, error) {
-	wallet, err := h.svc.Create(ctx, req)
+func (h *Handler) Create(w http.ResponseWriter, r *http.Request, req *request.CreateWallet) (*response.Wallet, error) {
+	wallet, err := h.svc.Create(r.Context(), req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create wallet: %w", err)
 	}
@@ -32,6 +33,8 @@ func (h *Handler) Create(ctx context.Context, req *request.CreateWallet) (*respo
 	if err != nil {
 		return nil, fmt.Errorf("failed to render wallet response: %w", err)
 	}
+
+	w.WriteHeader(http.StatusCreated)
 
 	return walletResp, nil
 }
@@ -108,7 +111,7 @@ func (h *Handler) RevertTransfer(ctx context.Context, req *request.RevertTransfe
 
 func (h *Handler) RegisterRoutes(r chi.Router) {
 	r.Route("/wallets", func(r chi.Router) {
-		r.Post("/", handler.WrapDefaultBasic(h.Create))
+		r.Post("/", handler.WrapDefault(h.Create))
 		r.Route("/{walletID}", func(r chi.Router) {
 			r.Get("/", handler.WrapDefaultBasic(h.Get))
 			r.Route("/transfers", func(r chi.Router) {

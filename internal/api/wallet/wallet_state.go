@@ -24,27 +24,27 @@ func ProcessEvents(ctx context.Context, projection *entity.WalletProjection, eve
 
 		switch event.EventType {
 		case entity.EventTypeDebitTransfer:
-			if event.TransferStatus == entity.TransferStatusPending {
+			if event.Status == entity.TransferStatusPending {
 				eventMapping[event.TransferID] = k
 				projection.PendingDebit = projection.PendingDebit.Add(event.Amount)
 				continue
 			}
 
-			if event.TransferStatus == entity.TransferStatusFailed {
+			if event.Status == entity.TransferStatusFailed {
 				continue // skip since we don't need to process failed transfers
 			}
 
-			if event.TransferStatus == entity.TransferStatusCompleted {
+			if event.Status == entity.TransferStatusCompleted {
 				projection.Balance = projection.Balance.Add(event.Amount)
 			}
 
 		case entity.EventTypeCreditTransfer:
-			if event.TransferStatus == entity.TransferStatusPending {
+			if event.Status == entity.TransferStatusPending {
 				eventMapping[event.TransferID] = k
 				projection.PendingCredit = projection.PendingCredit.Add(event.Amount)
 			}
 
-			if event.TransferStatus == entity.TransferStatusFailed {
+			if event.Status == entity.TransferStatusFailed {
 				continue // skip since we don't need to process failed transfers
 			}
 
@@ -60,15 +60,15 @@ func ProcessEvents(ctx context.Context, projection *entity.WalletProjection, eve
 			desiredEvent := events[idx]
 
 			if desiredEvent.EventType == entity.EventTypeDebitTransfer {
-				if event.TransferStatus == entity.TransferStatusPending {
+				if event.Status == entity.TransferStatusPending {
 					continue
 				}
 
-				if event.TransferStatus == entity.TransferStatusFailed {
+				if event.Status == entity.TransferStatusFailed {
 					projection.PendingDebit = projection.PendingDebit.Sub(desiredEvent.Amount)
 				}
 
-				if event.TransferStatus == entity.TransferStatusCompleted {
+				if event.Status == entity.TransferStatusCompleted {
 					projection.PendingDebit = projection.PendingDebit.Sub(desiredEvent.Amount)
 					projection.Balance = projection.Balance.Add(desiredEvent.Amount)
 				}
@@ -77,16 +77,16 @@ func ProcessEvents(ctx context.Context, projection *entity.WalletProjection, eve
 			}
 
 			if desiredEvent.EventType == entity.EventTypeCreditTransfer {
-				if event.TransferStatus == entity.TransferStatusPending {
+				if event.Status == entity.TransferStatusPending {
 					continue
 				}
 
-				if event.TransferStatus == entity.TransferStatusFailed {
+				if event.Status == entity.TransferStatusFailed {
 					projection.PendingCredit = projection.PendingCredit.Sub(desiredEvent.Amount)
 					projection.Balance = projection.Balance.Add(desiredEvent.Amount) // revert the balance, since we already took it out in the above case
 				}
 
-				if event.TransferStatus == entity.TransferStatusCompleted {
+				if event.Status == entity.TransferStatusCompleted {
 					projection.PendingCredit = projection.PendingCredit.Sub(desiredEvent.Amount)
 				}
 

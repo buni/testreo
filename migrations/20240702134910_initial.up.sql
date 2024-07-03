@@ -28,9 +28,7 @@ CREATE TABLE "public"."wallet_projections" (
 -- create "wallets" table
 CREATE TABLE "public"."wallets" (
   "id" uuid NOT NULL,
-  "reference_id" uuid NOT NULL,
-  "name" text NOT NULL,
-  "currency" text NOT NULL,
+  "reference_id" text NOT NULL,
   "created_at" timestamp NULL DEFAULT statement_timestamp(),
   "updated_at" timestamp NULL DEFAULT statement_timestamp(),
   PRIMARY KEY ("id"),

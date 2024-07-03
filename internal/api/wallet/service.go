@@ -192,7 +192,7 @@ func (s *Service) CreditTransfer(ctx context.Context, req *request.CreditTransfe
 	return result, nil
 }
 
-func (s *Service) CompleteTransfer(ctx context.Context, req *request.CompleteTransfer) (result entity.WalletEvent, err error) {
+func (s *Service) CompleteTransfer(ctx context.Context, req *request.CompleteTransfer) (result entity.WalletEvent, err error) { //nolint:dupl
 	event, err := entity.NewWalletEvent(req.TransferID, req.ReferenceID, req.WalletID, decimal.NewFromInt(0), entity.EventTypeUpdateTransferStatus, entity.TransferStatusCompleted)
 	if err != nil {
 		return result, fmt.Errorf("failed to create wallet event: %w", err)
@@ -224,7 +224,7 @@ func (s *Service) CompleteTransfer(ctx context.Context, req *request.CompleteTra
 	return result, nil
 }
 
-func (s *Service) RevertTransfer(ctx context.Context, req *request.RevertTransfer) (result entity.WalletEvent, err error) {
+func (s *Service) RevertTransfer(ctx context.Context, req *request.RevertTransfer) (result entity.WalletEvent, err error) { //nolint:dupl
 	event, err := entity.NewWalletEvent(req.TransferID, req.ReferenceID, req.WalletID, decimal.NewFromInt(0), entity.EventTypeUpdateTransferStatus, entity.TransferStatusFailed)
 	if err != nil {
 		return result, fmt.Errorf("failed to create wallet event: %w", err)
@@ -256,24 +256,22 @@ func (s *Service) RevertTransfer(ctx context.Context, req *request.RevertTransfe
 	return result, nil
 }
 
-func (s *Service) RebuildWalletProjection(ctx context.Context, walletID string) (result entity.WalletProjection, err error) {
+func (s *Service) RebuildWalletProjection(ctx context.Context, event *entity.WalletEvent) (result entity.WalletProjection, err error) {
 	logger := sloglog.FromContext(ctx)
 	err = s.txm.Run(ctx, func(ctx context.Context) error {
-		projection, err := s.projectionRepo.Get(ctx, walletID)
+		projection, err := s.projectionRepo.Get(ctx, event.WalletID)
 		if err != nil {
 			return fmt.Errorf("failed to get wallet projection: %w", err)
 		}
 
-		events, err := s.eventRepo.ListByWalletID(ctx, walletID)
-		if err != nil {
-			return fmt.Errorf("failed to list wallet events: %w", err)
+		if projection.LastEventID >= event.ID { // UUIDv7's are k-sortable and lexicographic, so we can just compare the last event id using comparison operators, since strings in go are compared lexicographically
+			logger.InfoContext(ctx, "no new events to process skipping rebuild") // if we need to do a full rebuild for some reason and there are no new events a different mechanism function should be used
+			return nil
 		}
 
-		if len(events) != 0 {
-			if events[len(events)-1].ID <= projection.LastEventID {
-				logger.InfoContext(ctx, "no new events to process skipping rebuild")
-				return nil
-			}
+		events, err := s.eventRepo.ListByWalletID(ctx, event.WalletID)
+		if err != nil {
+			return fmt.Errorf("failed to list wallet events: %w", err)
 		}
 
 		err = ProcessEvents(ctx, &result, events)

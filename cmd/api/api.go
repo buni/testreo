@@ -53,7 +53,7 @@ func main() error {
 		return fmt.Errorf("failed to connect to jetstream: %w", err)
 	}
 
-	publisher, err := jetstream.NewJetStreamPublisher(natsConn, jetstreamConn)
+	publisher, err := jetstream.NewJetStreamPublisher(jetstreamConn)
 	if err != nil {
 		return fmt.Errorf("failed to create jetstream publisher: %w", err)
 	}

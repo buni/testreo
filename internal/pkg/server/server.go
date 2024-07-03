@@ -114,11 +114,12 @@ func (a *Server) Wait(shutdownFuncs ...func()) {
 
 	a.Logger.InfoContext(a.Context, "shutting down")
 	a.httpServer.Shutdown(ctx) //nolint:errcheck,revive
+
+	<-ctx.Done()
+	a.cancel()
 	for _, shutdownFunc := range shutdownFuncs {
 		shutdownFunc()
 	}
 
-	a.cancel()
-	<-ctx.Done()
 	a.Logger.InfoContext(a.Context, "shutdown")
 }

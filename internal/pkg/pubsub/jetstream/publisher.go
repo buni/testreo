@@ -12,13 +12,11 @@ import (
 var _ pubsub.Publisher = (*Publisher)(nil)
 
 type Publisher struct {
-	natsConn      *nats.Conn
 	jetstreamConn nats.JetStreamContext
 }
 
-func NewJetStreamPublisher(natsConn *nats.Conn, jetstreamConn nats.JetStreamContext) (*Publisher, error) {
+func NewJetStreamPublisher(jetstreamConn nats.JetStreamContext) (*Publisher, error) {
 	return &Publisher{
-		natsConn:      natsConn,
 		jetstreamConn: jetstreamConn,
 	}, nil
 }

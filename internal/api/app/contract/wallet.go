@@ -7,6 +7,8 @@ import (
 	"github.com/buni/wallet/internal/api/app/request"
 )
 
+//go:generate mockgen -source=wallet.go -destination=mock/wallet_mocks.go -package contract_mock
+
 type WalletRepository interface {
 	Get(ctx context.Context, id string) (entity.Wallet, error)
 	Create(ctx context.Context, wallet entity.Wallet) (entity.Wallet, error)
@@ -30,7 +32,7 @@ type WalletService interface {
 	CreditTransfer(ctx context.Context, req *request.CreditTransfer) (entity.WalletEvent, error)
 	CompleteTransfer(ctx context.Context, req *request.CompleteTransfer) (entity.WalletEvent, error)
 	RevertTransfer(ctx context.Context, req *request.RevertTransfer) (entity.WalletEvent, error)
-	RebuildWalletProjection(ctx context.Context, walletID string) (entity.WalletProjection, error)
+	RebuildWalletProjection(ctx context.Context, event *entity.WalletEvent) (entity.WalletProjection, error)
 }
 
 type WalletEventPublisher interface {
