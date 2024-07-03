@@ -3,7 +3,6 @@ package wallet
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"time"
 
 	"github.com/buni/wallet/internal/api/app/contract"
@@ -62,7 +61,7 @@ func (s *Service) Create(ctx context.Context, req *request.CreateWallet) (result
 		return nil
 	})
 	if err != nil {
-		return
+		return entity.Wallet{}, err //nolint:wrapcheck
 	}
 
 	return result, nil
@@ -88,7 +87,7 @@ func (s *Service) Get(ctx context.Context, req *request.GetWallet) (result entit
 		return nil
 	})
 	if err != nil {
-		return
+		return entity.WalletBalanceProjection{}, err //nolint:wrapcheck
 	}
 
 	return result, nil
@@ -130,7 +129,7 @@ func (s *Service) DebitTransfer(ctx context.Context, req *request.DebitTransfer)
 		return nil
 	})
 	if err != nil {
-		return
+		return entity.WalletEvent{}, err //nolint:wrapcheck
 	}
 
 	return result, nil
@@ -188,7 +187,7 @@ func (s *Service) CreditTransfer(ctx context.Context, req *request.CreditTransfe
 		return nil
 	})
 	if err != nil {
-		return
+		return entity.WalletEvent{}, err //nolint:wrapcheck
 	}
 
 	return result, nil
@@ -220,7 +219,7 @@ func (s *Service) CompleteTransfer(ctx context.Context, req *request.CompleteTra
 		return nil
 	})
 	if err != nil {
-		return
+		return entity.WalletEvent{}, err //nolint:wrapcheck
 	}
 
 	return result, nil
@@ -252,7 +251,7 @@ func (s *Service) RevertTransfer(ctx context.Context, req *request.RevertTransfe
 		return nil
 	})
 	if err != nil {
-		return
+		return entity.WalletEvent{}, err //nolint:wrapcheck
 	}
 
 	return result, nil
@@ -261,7 +260,6 @@ func (s *Service) RevertTransfer(ctx context.Context, req *request.RevertTransfe
 func (s *Service) RebuildWalletProjection(ctx context.Context, event *entity.WalletEvent) (result entity.WalletProjection, err error) {
 	logger := sloglog.FromContext(ctx)
 	err = s.txm.Run(ctx, func(ctx context.Context) error {
-		logger.InfoContext(ctx, "rebuilding wallet projection", slog.Any("event", event))
 		projection, err := s.projectionRepo.Get(ctx, event.WalletID)
 		if err != nil {
 			return fmt.Errorf("failed to get wallet projection: %w", err)
@@ -276,8 +274,6 @@ func (s *Service) RebuildWalletProjection(ctx context.Context, event *entity.Wal
 		if err != nil {
 			return fmt.Errorf("failed to list wallet events: %w", err)
 		}
-
-		logger.InfoContext(ctx, "processing wallet events", slog.Any("events", events))
 
 		err = ProcessEvents(ctx, &result, events)
 		if err != nil {
@@ -294,7 +290,7 @@ func (s *Service) RebuildWalletProjection(ctx context.Context, event *entity.Wal
 		return nil
 	})
 	if err != nil {
-		return
+		return entity.WalletProjection{}, err //nolint:wrapcheck
 	}
 
 	return result, nil

@@ -214,6 +214,36 @@ func TestProcessEvents(t *testing.T) {
 			expectedErr: nil,
 		},
 		{
+			name: "duplicate transfer ids for credit and debit",
+			events: []entity.WalletEvent{
+				{
+					TransferID: "123",
+					EventType:  entity.EventTypeCreditTransfer,
+					Amount:     decimal.NewFromInt(30),
+					Status:     entity.TransferStatusPending,
+				},
+				{
+					TransferID: "123",
+					EventType:  entity.EventTypeDebitTransfer,
+					Amount:     decimal.NewFromInt(50),
+					Status:     entity.TransferStatusPending,
+				},
+				{
+					WalletID:   "wallet1",
+					TransferID: "123",
+					EventType:  entity.EventTypeUpdateTransferStatus,
+					Status:     entity.TransferStatusCompleted,
+				},
+			},
+			expected: entity.WalletProjection{
+				WalletID:      "wallet1",
+				Balance:       decimal.NewFromInt(20),
+				PendingDebit:  decimal.NewFromInt(1).Sub(decimal.NewFromInt(1)),
+				PendingCredit: decimal.NewFromInt(30),
+			},
+			expectedErr: nil,
+		},
+		{
 			name: "debit, credit, and pending transactions",
 			events: []entity.WalletEvent{
 				{
@@ -271,6 +301,7 @@ func TestProcessEvents(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			projection := &entity.WalletProjection{}
 			err := wallet.ProcessEvents(context.Background(), projection, tt.events)
+
 			if tt.expectedErr != nil {
 				assert.Empty(t, projection)
 				assert.ErrorIs(t, tt.expectedErr, err)
