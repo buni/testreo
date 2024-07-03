@@ -25,6 +25,8 @@ The project uses `enumer` (a version of `stringer` that supports more features) 
 - Docker
 - golangci-lint for the linter 
 - go-fumpt for stricter formatting
+- enumer for generating string methods for enums
+- testify for unit tests
 
 ## API 
 - POST /v1/wallet - creates a wallet
@@ -68,6 +70,7 @@ A postman collection and a basic openapi spec is included in the specification d
 - Unit tests are done using testify.Suite for business logic related stuff 
 - Decimal type is used for all money related fields to avoid floating point precision errors (this includes both in code and in the database)
 - All money related request/response fields is represented as a string to avoid floating point precision errors both `1.1` and `111` are valid inputs so its up to the user to decide if cents are used and if partial/decimal values are used
+- The unique index `CREATE UNIQUE INDEX idx_wallet_events_wallet_id_transfer_id_event_type ON wallet_events (wallet_id, transfer_id, event_type);` is there to prevent duplicate status overrides (e.g. a transfer is completed/reverted twice), what it doesn't guard against is a debit and credit transfers using the same `transfer_id` , if that happens only the first transfer will be processed and the second one will be ignored. This tradeoff was made to simplify the implementation, but it means `transfer_ids` should be unique in the context of the given wallet/operation
 
 
 ## This that can be improved 

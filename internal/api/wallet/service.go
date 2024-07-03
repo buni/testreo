@@ -3,6 +3,7 @@ package wallet
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/buni/wallet/internal/api/app/contract"
@@ -111,7 +112,7 @@ func (s *Service) DebitTransfer(ctx context.Context, req *request.DebitTransfer)
 	}
 
 	err = s.txm.Run(ctx, func(ctx context.Context) error {
-		_, err := s.repo.Get(ctx, req.WalletID) // make sure the wallet exists
+		_, err = s.repo.Get(ctx, req.WalletID) // make sure the wallet exists
 		if err != nil {
 			return fmt.Errorf("failed to get wallet: %w", err)
 		}
@@ -260,13 +261,14 @@ func (s *Service) RevertTransfer(ctx context.Context, req *request.RevertTransfe
 func (s *Service) RebuildWalletProjection(ctx context.Context, event *entity.WalletEvent) (result entity.WalletProjection, err error) {
 	logger := sloglog.FromContext(ctx)
 	err = s.txm.Run(ctx, func(ctx context.Context) error {
+		logger.InfoContext(ctx, "rebuilding wallet projection", slog.Any("event", event))
 		projection, err := s.projectionRepo.Get(ctx, event.WalletID)
 		if err != nil {
 			return fmt.Errorf("failed to get wallet projection: %w", err)
 		}
 
 		if projection.LastEventID >= event.ID { // UUIDv7's are k-sortable and lexicographic, so we can just compare the last event id using comparison operators, since strings in go are compared lexicographically
-			logger.InfoContext(ctx, "no new events to process skipping rebuild") // if we need to do a full rebuild for some reason and there are no new events a different mechanism function should be used
+			logger.InfoContext(ctx, "no new events to process skipping rebuild") // if we need to do a full rebuild for some reason and there are no new events a different function should be used
 			return nil
 		}
 
@@ -274,6 +276,8 @@ func (s *Service) RebuildWalletProjection(ctx context.Context, event *entity.Wal
 		if err != nil {
 			return fmt.Errorf("failed to list wallet events: %w", err)
 		}
+
+		logger.InfoContext(ctx, "processing wallet events", slog.Any("events", events))
 
 		err = ProcessEvents(ctx, &result, events)
 		if err != nil {

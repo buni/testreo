@@ -11,6 +11,7 @@ import (
 	"github.com/buni/wallet/internal/pkg/configuration"
 	"github.com/buni/wallet/internal/pkg/database/pgxtx"
 	"github.com/buni/wallet/internal/pkg/pubsub/jetstream"
+	"github.com/buni/wallet/internal/pkg/pubsub/outbox"
 	"github.com/buni/wallet/internal/pkg/pubsub/router"
 	"github.com/buni/wallet/internal/pkg/server"
 	"github.com/go-chi/chi/v5"
@@ -119,12 +120,28 @@ func main() error {
 		return fmt.Errorf("failed to start pubsub router: %w", err)
 	}
 
+	outboxRepo := outbox.NewPGxRepository(txWrapper)
+	outboxWorker, err := outbox.NewOutboxWorker(outboxRepo, txm, []outbox.PublisherSettings{
+		{
+			Publisher:     publisher,
+			PublisherType: jetstream.JetStreamPublisherType,
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create outbox worker: %w", err)
+	}
+
+	err = outboxWorker.Start(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to start outbox worker: %w", err)
+	}
+
 	err = srv.Start()
 	if err != nil {
 		return fmt.Errorf("failed to start server: %w", err)
 	}
 
-	srv.Wait(pubsubRouter.Wait)
+	srv.Wait(pubsubRouter.Wait, outboxWorker.Wait)
 
 	return nil
 }

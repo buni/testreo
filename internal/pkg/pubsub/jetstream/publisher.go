@@ -9,6 +9,10 @@ import (
 	"github.com/nats-io/nats.go"
 )
 
+const (
+	JetStreamPublisherType = "jetstream"
+)
+
 var _ pubsub.Publisher = (*Publisher)(nil)
 
 type Publisher struct {

@@ -42,6 +42,9 @@ func RequestDecoderMiddleware[Request, Response any]() MiddlewareFunc[Request, R
 			if err != nil {
 				return nil, fmt.Errorf("failed to decode request: %w", err)
 			}
+
+			w.Header().Set("Content-Type", "application/json; charset=utf-8")
+
 			return handler(w, r, reqBody)
 		}
 	}

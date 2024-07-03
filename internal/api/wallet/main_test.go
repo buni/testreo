@@ -15,6 +15,9 @@ func TestMain(m *testing.M) {
 	errorhandler.RegisterErrorHandler("validation_field_errors_handler", errorhandler.ValidationFieldErrorsHandler)
 	errorhandler.RegisterErrorHandler("validation_field_error_handler", errorhandler.ValidationFieldErrorHandler)
 	errorhandler.RegisterErrorHandler("not_found_error_handler", errorhandler.NotFoundErrorHandler)
+	errorhandler.RegisterErrorHandler("unique_constraint_error_handler", errorhandler.ConflictErrorHandler)
+	errorhandler.RegisterErrorHandler("insufficient_balance_error_handler", errorhandler.InsufficientBalanceErrorHandler)
+	errorhandler.RegisterErrorHandler("negative_amount_error_handler", errorhandler.NegativeAmountErrorHandler)
 
 	code := m.Run()
 	os.Exit(code)

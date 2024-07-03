@@ -88,6 +88,8 @@ func write[Response any](ctx context.Context, w http.ResponseWriter, status int,
 		ww = middleware.NewWrapResponseWriter(w, 1)
 	}
 
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+
 	if ww.BytesWritten() != 0 {
 		log.DebugContext(ctx, "response already written, in renderer")
 		return
@@ -103,8 +105,6 @@ func write[Response any](ctx context.Context, w http.ResponseWriter, status int,
 		http.Error(ww, InternalServerError, http.StatusInternalServerError)
 		return
 	}
-
-	ww.Header().Set("Content-Type", "application/json; charset=utf-8")
 
 	if ww.Status() == 0 {
 		ww.WriteHeader(status)

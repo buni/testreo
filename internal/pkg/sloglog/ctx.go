@@ -19,7 +19,7 @@ func ToContext(ctx context.Context, id *slog.Logger) context.Context {
 func FromContext(ctx context.Context) *slog.Logger {
 	total, ok := ctx.Value(ctxKey{}).(*slog.Logger)
 	if !ok {
-		return slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{
+		return slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 			AddSource: true,
 		}))
 	}

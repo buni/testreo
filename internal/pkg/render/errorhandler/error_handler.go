@@ -3,6 +3,7 @@ package errorhandler
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -79,9 +80,40 @@ func NotFoundErrorHandler(ctx context.Context, w http.ResponseWriter, err error)
 	return false
 }
 
+func NegativeAmountErrorHandler(ctx context.Context, w http.ResponseWriter, err error) bool {
+	if errors.Is(err, entity.ErrNegativeAmount) {
+		render.NewValidationErrorResponse(ctx, w, render.NewValidationError(&render.FieldError{
+			Field:   "amount",
+			Message: "amount must not be negative",
+		}))
+		return true
+	}
+	return false
+}
+
+func InsufficientBalanceErrorHandler(ctx context.Context, w http.ResponseWriter, err error) bool {
+	if errors.Is(err, entity.ErrInsufficientBalance) {
+		render.NewValidationErrorResponse(ctx, w, render.NewValidationError(&render.FieldError{
+			Field:   "balance",
+			Message: "wallet balance is insufficient for this operation",
+		}))
+		return true
+	}
+	return false
+}
+
 func ConflictErrorHandler(ctx context.Context, w http.ResponseWriter, err error) bool {
-	if strings.Contains(err.Error(), "unique constraint") {
-		render.NewErrorResponse(ctx, w, http.StatusConflict, render.ConflictError, errors.New("entity already exists")) //nolint:goerr113
+	errStr := err.Error()
+	if strings.Contains(errStr, "unique constraint") {
+		field := "reference_id"
+		if strings.Contains(errStr, "transfer_id") {
+			field = "transfer_id"
+		}
+
+		render.NewValidationErrorResponse(ctx, w, render.NewValidationError(&render.FieldError{
+			Field:   field,
+			Message: fmt.Sprintf("value already used for different %s", strings.Trim(field, "_id")),
+		}))
 		return true
 	}
 	return false

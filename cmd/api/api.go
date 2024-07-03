@@ -9,13 +9,13 @@ import (
 	"github.com/buni/wallet/internal/pkg/configuration"
 	"github.com/buni/wallet/internal/pkg/database/pgxtx"
 	"github.com/buni/wallet/internal/pkg/pubsub/jetstream"
+	"github.com/buni/wallet/internal/pkg/pubsub/outbox"
 	"github.com/buni/wallet/internal/pkg/render/errorhandler"
 	"github.com/buni/wallet/internal/pkg/server"
 	httpin_integration "github.com/ggicci/httpin/integration" //nolint
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/nats-io/nats.go"
 	"github.com/spf13/cobra"
 )
 
@@ -38,6 +38,9 @@ func main() error {
 	errorhandler.RegisterErrorHandler("validation_field_errors_handler", errorhandler.ValidationFieldErrorsHandler)
 	errorhandler.RegisterErrorHandler("validation_field_error_handler", errorhandler.ValidationFieldErrorHandler)
 	errorhandler.RegisterErrorHandler("not_found_error_handler", errorhandler.NotFoundErrorHandler)
+	errorhandler.RegisterErrorHandler("unique_constraint_error_handler", errorhandler.ConflictErrorHandler)
+	errorhandler.RegisterErrorHandler("insufficient_balance_error_handler", errorhandler.InsufficientBalanceErrorHandler)
+	errorhandler.RegisterErrorHandler("negative_amount_error_handler", errorhandler.NegativeAmountErrorHandler)
 
 	srv, err := server.NewServer(context.Background())
 	if err != nil {
@@ -49,21 +52,6 @@ func main() error {
 	config, err := configuration.NewConfiguration()
 	if err != nil {
 		return fmt.Errorf("failed to load configuration: %w", err)
-	}
-
-	natsConn, err := nats.Connect(config.NATS.ToURL())
-	if err != nil {
-		return fmt.Errorf("failed to connect to nats: %w", err)
-	}
-
-	jetstreamConn, err := natsConn.JetStream()
-	if err != nil {
-		return fmt.Errorf("failed to connect to jetstream: %w", err)
-	}
-
-	publisher, err := jetstream.NewJetStreamPublisher(jetstreamConn)
-	if err != nil {
-		return fmt.Errorf("failed to create jetstream publisher: %w", err)
 	}
 
 	pgxConf, err := pgxpool.ParseConfig(config.Database.ToURL())
@@ -84,6 +72,9 @@ func main() error {
 	txWrapper := pgxtx.NewTxWrapper(pgxPool, pgx.TxOptions{})
 
 	txm := pgxtx.NewTransactionManager(pgxPool, pgx.TxOptions{})
+
+	outboxRepo := outbox.NewPGxRepository(txWrapper)
+	publisher := outbox.NewPublisher[any](outboxRepo, txm, jetstream.JetStreamPublisherType)
 
 	walletRepo := wallet.NewRepository(txWrapper)
 	walletEventRepo := wallet.NewEventRepository(txWrapper)

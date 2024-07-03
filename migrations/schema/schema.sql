@@ -31,3 +31,15 @@ CREATE TABLE wallet_events (
 );
 
 CREATE UNIQUE INDEX idx_wallet_events_wallet_id_transfer_id_event_type ON wallet_events (wallet_id, transfer_id, event_type);
+
+CREATE TABLE IF NOT EXISTS outbox_messages (
+    id uuid NOT NULL PRIMARY KEY,
+    payload jsonb NOT NULL,
+    publisher_type text NOT NULL,
+    publisher_options jsonb NOT NULL,
+    status text NOT NULL,
+    created_at timestamp NOT NULL,
+    updated_at timestamp NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_outbox_messages_status_publisher_type ON outbox_messages (status, publisher_type);
