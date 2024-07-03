@@ -24,6 +24,10 @@ func ProcessEvents(ctx context.Context, projection *entity.WalletProjection, eve
 		switch event.EventType {
 		case entity.EventTypeDebitTransfer:
 			if event.Status == entity.TransferStatusPending {
+				if _, ok := eventMapping[event.TransferID]; ok {
+					logger.WarnContext(ctx, "transfer id already exists", slog.String("transfer_id", event.TransferID), slog.Any("event", event))
+					continue
+				}
 				eventMapping[event.TransferID] = k
 				projection.PendingDebit = projection.PendingDebit.Add(event.Amount)
 				continue
@@ -39,6 +43,10 @@ func ProcessEvents(ctx context.Context, projection *entity.WalletProjection, eve
 
 		case entity.EventTypeCreditTransfer:
 			if event.Status == entity.TransferStatusPending {
+				if _, ok := eventMapping[event.TransferID]; ok {
+					logger.WarnContext(ctx, "transfer id already exists", slog.String("transfer_id", event.TransferID), slog.Any("event", event))
+					continue
+				}
 				eventMapping[event.TransferID] = k
 				projection.PendingCredit = projection.PendingCredit.Add(event.Amount)
 			}
