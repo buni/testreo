@@ -51,6 +51,7 @@ services:
       - .env
     depends_on:
       - postgres
+      - nats
     restart: always
     entrypoint: sh -c `wgo make atlas-migrate '::' wgo make atlas-status '::' wgo run cmd/main.go api`
   migrate:
@@ -75,6 +76,7 @@ services:
       - .env
     depends_on:
       - postgres
+      - nats
     restart: always
     entrypoint: sh -c `wgo run cmd/main.go worker`
   tools:

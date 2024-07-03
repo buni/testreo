@@ -5,7 +5,15 @@ Since tests unit tests and "integration" tests are not split up via build tags, 
 - `go test -v ./... -cover` will run all tests and show coverage
 
 ## Linting the service 
+- `go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest` will install the linter
 - `golangci-lint run --verbose` will run the linter
+## Generate mocks
+The project uses `mockgen` to generate mocks for interfaces
+- `go install go.uber.org/mock/mockgen@lates` will install the mockgen tool
+## Generate enums 
+The project uses `enumer` (a version of `stringer` that supports more features) to generate string methods for iota based enums 
+- `go install github.com/dmarkham/enumer@latest` will install the enumer tool
+
 ## Starting the service
 - duplicate the `.env.example` file and rename it to `.env`
 - `make up` will start the service, after that you should be able to access the service on `localhost:8089`
