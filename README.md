@@ -1,7 +1,7 @@
 # Wallet Service
 
 ## Run tests (requires docker)
-Since tests unit tests and "integration" tests are not split up, you need to have docker running to run the tests, this uses https://github.com/ory/dockertest under the hood and might require a docker desktop configuration change (if there is an error when spinning up the test containers) 
+Since tests unit tests and "integration" tests are not split up via build tags, you need to have docker running to execute the tests, this uses https://github.com/ory/dockertest under the hood and might require a docker desktop configuration change (if there is an error when spinning up the test containers) 
 - `go test -v ./... -cover` will run all tests and show coverage
 
 ## Linting the service 
