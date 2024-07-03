@@ -4,7 +4,6 @@ import (
 	"context"
 	"log"
 	"testing"
-	"time"
 
 	"github.com/buni/wallet/internal/api/app/entity"
 	"github.com/buni/wallet/internal/api/wallet"
@@ -13,8 +12,6 @@ import (
 )
 
 func TestProcessEvents(t *testing.T) {
-	tt := time.Now()
-
 	tests := []struct {
 		name        string
 		events      []entity.WalletEvent
@@ -61,6 +58,22 @@ func TestProcessEvents(t *testing.T) {
 		{
 			name: "valid debit transfer event",
 			events: []entity.WalletEvent{
+				{
+					ID:         "debit0",
+					WalletID:   "wallet1",
+					EventType:  entity.EventTypeDebitTransfer,
+					TransferID: "debit",
+					Amount:     decimal.NewFromInt(50),
+					Status:     entity.TransferStatusFailed,
+				},
+				{
+					ID:         "debit0",
+					WalletID:   "wallet1",
+					EventType:  entity.EventTypeCreditTransfer,
+					TransferID: "credit123",
+					Amount:     decimal.NewFromInt(50),
+					Status:     entity.TransferStatusFailed,
+				},
 				{
 					ID:         "debit1",
 					EventType:  entity.EventTypeDebitTransfer,
@@ -149,6 +162,13 @@ func TestProcessEvents(t *testing.T) {
 				},
 				{
 					WalletID:   "wallet1",
+					TransferID: "debit123",
+					Amount:     decimal.NewFromInt(50),
+					EventType:  entity.EventTypeDebitTransfer,
+					Status:     entity.TransferStatusPending,
+				},
+				{
+					WalletID:   "wallet1",
 					TransferID: "credit1",
 					Amount:     decimal.NewFromInt(20),
 					EventType:  entity.EventTypeCreditTransfer,
@@ -158,8 +178,27 @@ func TestProcessEvents(t *testing.T) {
 					WalletID:   "wallet1",
 					EventType:  entity.EventTypeUpdateTransferStatus,
 					TransferID: "credit1",
+					Status:     entity.TransferStatusPending,
+				},
+				{
+					WalletID:   "wallet1",
+					EventType:  entity.EventTypeUpdateTransferStatus,
+					TransferID: "credit1",
 					Status:     entity.TransferStatusFailed,
 				},
+				{
+					WalletID:   "wallet1",
+					EventType:  entity.EventTypeUpdateTransferStatus,
+					TransferID: "debit123",
+					Status:     entity.TransferStatusPending,
+				},
+				{
+					WalletID:   "wallet1",
+					EventType:  entity.EventTypeUpdateTransferStatus,
+					TransferID: "debit123",
+					Status:     entity.TransferStatusFailed,
+				},
+
 				{
 					WalletID:   "wallet1",
 					TransferID: "debit1",
@@ -190,9 +229,16 @@ func TestProcessEvents(t *testing.T) {
 					Status:    entity.TransferStatusPending,
 				},
 				{
-					EventType: entity.EventTypeCreditTransfer,
-					Amount:    decimal.NewFromInt(30),
-					Status:    entity.TransferStatusPending,
+					EventType:  entity.EventTypeCreditTransfer,
+					TransferID: "credit",
+					Amount:     decimal.NewFromInt(30),
+					Status:     entity.TransferStatusPending,
+				},
+				{
+					EventType:  entity.EventTypeCreditTransfer,
+					TransferID: "credit1",
+					Amount:     decimal.NewFromInt(0),
+					Status:     entity.TransferStatusPending,
 				},
 				{
 					EventType: entity.EventTypeDebitTransfer,
@@ -204,7 +250,12 @@ func TestProcessEvents(t *testing.T) {
 					EventType: entity.EventTypeCreditTransfer,
 					Amount:    decimal.NewFromInt(10),
 					Status:    entity.TransferStatusCompleted,
-					CreatedAt: tt,
+				},
+				{
+					WalletID:   "wallet1",
+					EventType:  entity.EventTypeUpdateTransferStatus,
+					TransferID: "credit1",
+					Status:     entity.TransferStatusCompleted,
 				},
 			},
 			expected: entity.WalletProjection{

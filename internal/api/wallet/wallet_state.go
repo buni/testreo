@@ -3,7 +3,6 @@ package wallet
 import (
 	"context"
 	"log/slog"
-	"time"
 
 	"github.com/buni/wallet/internal/api/app/entity"
 	"github.com/buni/wallet/internal/pkg/sloglog"
@@ -103,7 +102,6 @@ func ProcessEvents(ctx context.Context, projection *entity.WalletProjection, eve
 	lastIdx := len(events) - 1
 	projection.WalletID = events[lastIdx].WalletID
 	projection.LastEventID = events[lastIdx].ID
-	projection.UpdatedAt = time.Now().UTC().Truncate(time.Microsecond)
 
 	return nil
 }

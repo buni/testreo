@@ -3,6 +3,7 @@ package wallet
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/buni/wallet/internal/api/app/contract"
 	"github.com/buni/wallet/internal/api/app/entity"
@@ -94,7 +95,7 @@ func (s *Service) Get(ctx context.Context, req *request.GetWallet) (result entit
 
 func (s *Service) DebitTransfer(ctx context.Context, req *request.DebitTransfer) (result entity.WalletEvent, err error) {
 	if req.Amount.IsNegative() {
-		return entity.WalletEvent{}, entity.ErrNegativeBalance
+		return entity.WalletEvent{}, entity.ErrNegativeAmount
 	}
 
 	event, err := entity.NewWalletEvent(
@@ -136,7 +137,7 @@ func (s *Service) DebitTransfer(ctx context.Context, req *request.DebitTransfer)
 
 func (s *Service) CreditTransfer(ctx context.Context, req *request.CreditTransfer) (result entity.WalletEvent, err error) {
 	if req.Amount.IsNegative() {
-		return entity.WalletEvent{}, entity.ErrNegativeBalance
+		return entity.WalletEvent{}, entity.ErrNegativeAmount
 	}
 
 	event, err := entity.NewWalletEvent(
@@ -278,6 +279,8 @@ func (s *Service) RebuildWalletProjection(ctx context.Context, event *entity.Wal
 		if err != nil {
 			return fmt.Errorf("failed to process wallet events: %w", err)
 		}
+
+		result.UpdatedAt = time.Now().UTC().Truncate(time.Microsecond)
 
 		_, err = s.projectionRepo.Update(ctx, result)
 		if err != nil {

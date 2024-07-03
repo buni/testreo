@@ -8,6 +8,6 @@ var (
 	ErrOutOfOrderWalletEvent   = errors.New("out of order wallet event")
 	ErrInvalidEventType        = errors.New("invalid event type")
 	ErrEntityNotFound          = errors.New("entity not found")
-	ErrNegativeBalance         = errors.New("negative balance")
+	ErrNegativeAmount          = errors.New("negative amount")
 	ErrInsufficientBalance     = errors.New("insufficient balance")
 )
