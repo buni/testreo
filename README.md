@@ -49,6 +49,8 @@ A postman collection and a basic openapi spec is included in the specification d
 - Wallet state/projections are updated asynchronously
 - Integration tests are done using docker test to spin up postgres/nats and run tests against them
 - Unit tests are done using testify.Suite for business logic related stuff 
+- Decimal type is used for all money related fields to avoid floating point precision errors (this includes both in code and in the database)
+- All money related request/response fields is represented as a string to avoid floating point precision errors both `1.1` and `111` are valid inputs so its up to the user to decide if cents are used and if partial/decimal values are used
 
 
 ## This that can be improved 
