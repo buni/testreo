@@ -19,7 +19,7 @@ require (
 	github.com/jinzhu/copier v0.4.0
 	github.com/kinbiko/jsonassert v1.1.1
 	github.com/nats-io/nats-server/v2 v2.10.17
-	github.com/nats-io/nats.go v1.36.0
+	github.com/nats-io/nats.go v1.37.0
 	github.com/ory/dockertest/v3 v3.10.0
 	github.com/shopspring/decimal v1.4.0
 	github.com/spf13/cobra v1.8.1
